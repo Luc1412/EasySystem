@@ -1,0 +1,3 @@
+git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py
+https://github.com/romangraef/discord_ban_list/archive/master.zip
+pymongo
