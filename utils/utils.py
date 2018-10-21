@@ -124,8 +124,8 @@ class CountdownManager:
     def check(self, user: discord.User):
         if user not in self.countdown_list:
             return False
-        value = (self.countdown_list[user] + 30) < time.time()
-        if value:
+        value = (self.countdown_list[user] + 30) >= time.time()
+        if not value:
             del self.countdown_list[user]
         return value
 

@@ -15,7 +15,7 @@ class Events:
         join_message.set_author(name='Welcome on EasySystem Support!', icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
         join_message.set_thumbnail(url=member.avatar_url)
         join_message.description = f'Please visit {self.bot.utils.channel.home().mention} for rules.\n' \
-                                   f'If you don\'t want to get any permissions from the server, go to ' \
+                                   f'If you don\'t want to get any notification from the server, go to ' \
                                    f'{self.bot.utils.channel.settings().mention} and turn it off'
         join_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
                                 icon_url=self.bot.cfg.get('Images.FooterIconURL'))

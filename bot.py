@@ -200,10 +200,7 @@ async def update():
             motd_type = discord.ActivityType.watching
         activity = discord.Activity()
         activity.type = motd_type
-        activity.name = motd_data[1] \
-            .replace('%s%', str(bot.utils.bot_stats.guilds())) \
-            .replace('%lu%', str(bot.utils.bot_stats.linked_user())) \
-            .replace('%uu%', str(bot.utils.bot_stats.unique_user()))
+        activity.name = motd_data[1]
         await bot.change_presence(activity=activity, status=discord.Status.online)
 
         if motd_nbr >= len(bot.utils.get_motd_playlist()) - 1:
