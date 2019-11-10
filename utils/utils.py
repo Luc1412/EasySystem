@@ -1,7 +1,6 @@
+import discord
 import time
 from enum import Enum
-
-import discord
 
 
 class Utils:
@@ -13,7 +12,10 @@ class Utils:
         self.color = Color()
         self.icon = Icon(bot)
         self.role = Role(bot)
-        self.countdown = CountdownManager()
+
+    @staticmethod
+    def format_username(user: discord.User):
+        return f'{user.name}#{user.discriminator}'
 
 
 class Icon:
@@ -37,8 +39,16 @@ class Icon:
         emoji_id = int(self.bot.cfg.get('Icons.EfsLogo'))
         return self.bot.get_emoji(emoji_id)
 
+    def ess_logo(self):
+        emoji_id = int(self.bot.cfg.get('Icons.EasyServerStats'))
+        return self.bot.get_emoji(emoji_id)
+
     def general(self):
         emoji_id = int(self.bot.cfg.get('Icons.General'))
+        return self.bot.get_emoji(emoji_id)
+
+    def challenges(self):
+        emoji_id = int(self.bot.cfg.get('Icons.Challenges'))
         return self.bot.get_emoji(emoji_id)
 
 
@@ -67,8 +77,28 @@ class Channel:
         channel_id = int(self.bot.cfg.get('Channel.EfsUpdate'))
         return self.bot.get_channel(channel_id)
 
+    def ess_update(self):
+        channel_id = int(self.bot.cfg.get('Channel.EssUpdate'))
+        return self.bot.get_channel(channel_id)
+
     def search(self):
         channel_id = int(self.bot.cfg.get('Channel.Search'))
+        return self.bot.get_channel(channel_id)
+
+    def public_log(self):
+        channel_id = int(self.bot.cfg.get('Channel.PublicLog'))
+        return self.bot.get_channel(channel_id)
+
+    def commands(self):
+        channel_id = int(self.bot.cfg.get('Channel.Commands'))
+        return self.bot.get_channel(channel_id)
+
+    def admin_commands(self):
+        channel_id = int(self.bot.cfg.get('Channel.AdminCommands'))
+        return self.bot.get_channel(channel_id)
+
+    def music(self):
+        channel_id = int(self.bot.cfg.get('Channel.Music'))
         return self.bot.get_channel(channel_id)
 
 
@@ -81,6 +111,10 @@ class Role:
         role_id = int(self.bot.cfg.get('Roles.User'))
         return self.bot.guilds[0].get_role(role_id)
 
+    def split(self):
+        role_id = int(self.bot.cfg.get('Roles.Split'))
+        return self.bot.guilds[0].get_role(role_id)
+
     def notification(self):
         role_id = int(self.bot.cfg.get('Roles.Notification'))
         return self.bot.guilds[0].get_role(role_id)
@@ -91,6 +125,14 @@ class Role:
 
     def team(self):
         role_id = int(self.bot.cfg.get('Roles.Team'))
+        return self.bot.guilds[0].get_role(role_id)
+
+    def shop(self):
+        role_id = int(self.bot.cfg.get('Roles.Shop'))
+        return self.bot.guilds[0].get_role(role_id)
+
+    def challenges(self):
+        role_id = int(self.bot.cfg.get('Roles.Challenges'))
         return self.bot.guilds[0].get_role(role_id)
 
 
@@ -111,36 +153,3 @@ class Color:
     @staticmethod
     def select():
         return discord.Colour.from_rgb(0, 98, 102)
-
-
-class CountdownManager:
-
-    def __init__(self):
-        self.countdown_list = dict()
-
-    def add(self, user: discord.User):
-        self.countdown_list[user] = time.time()
-
-    def check(self, user: discord.User):
-        if user not in self.countdown_list:
-            return False
-        value = (self.countdown_list[user] + 30) >= time.time()
-        if not value:
-            del self.countdown_list[user]
-        return value
-
-
-class UpdateType(Enum):
-    GeneralUpdate = '%general_icon%'
-    EfsUpdate = '%efs_icon%'
-
-    @staticmethod
-    def list():
-        return list(map(lambda c: c.value, UpdateType))
-
-    @staticmethod
-    def get_by_reaction(reaction: str):
-        for lang_item in UpdateType.list():
-            if lang_item == reaction:
-                return UpdateType(lang_item)
-        return None

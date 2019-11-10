@@ -1,95 +1,35 @@
-import asyncio
 import datetime
-import time
-
 import discord
+import io
+import time
 from discord.ext import commands
 
-from bot import Bot
-from utils import checks
-from utils.utils import UpdateType
+from bot import EasySystem
+from utils.selection import SelectionInterface, SelectionType, ReplacedText
 
 
-class AdminCommands:
+class AdminCommands(commands.Cog):
 
-    def __init__(self, bot: Bot):
+    def __init__(self, bot: EasySystem):
         self.bot = bot
+        self._last_result = None
 
     @staticmethod
-    async def selection_cancel(ctx, message):
-        cancel_message = discord.Embed()
-        cancel_message.colour = ctx.bot.utils.color.fail()
-        cancel_message.set_author(name='Selection canceled!', icon_url=ctx.bot.cfg.get('Images.IconSmallUrl'))
-        cancel_message.description = 'The selection was successfully canceled!'
-        cancel_message.set_footer(text=ctx.bot.cfg.get('Core.Footer'),
-                                  icon_url=ctx.bot.cfg.get('Images.FooterIconURL'))
-        await message.edit(embed=cancel_message, content=None)
+    def cleanup_code(content):
+        """Automatically removed code blocks from the code."""
+        # remove ```py\n```
+        if content.startswith('```') and content.endswith('```'):
+            return '\n'.join(content.split('\n')[1:-1])
 
-    @commands.group(invoke_without_command=True, case_insensitive=True)
-    @commands.guild_only()
-    @checks.is_guild_owner()
-    async def whitelist(self, ctx: commands.Context):
-        whitelist_message = discord.Embed()
+        # remove `foo`
+        return content.strip('` \n')
 
     @commands.command(case_insensitive=True)
     @commands.guild_only()
-    @checks.is_guild_owner()
-    async def icons(self, ctx: commands.Context):
-        message = str()
-        for emoji in ctx.guild.emojis:
-            message = message + f'{str(emoji.id)} **-** {emoji}\n'
-        icons_message = discord.Embed()
-        icons_message.colour = self.bot.utils.color.success()
-        icons_message.set_author(name='Guild\'s Icons', icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-        icons_message.description = message
-        icons_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                 icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-
-        await ctx.send(embed=icons_message, delete_after=60)
-
-    @commands.command(case_insensitive=True)
-    @commands.guild_only()
-    @checks.is_guild_owner()
-    async def roles(self, ctx: commands.Context):
-        message = str()
-        for role in ctx.guild.roles:
-            message = message + f'{str(role.id)} **-** {role.mention}\n'
-        roles_message = discord.Embed()
-        roles_message.colour = self.bot.utils.color.success()
-        roles_message.set_author(name='Guild\'s Roles', icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-        roles_message.description = message
-        roles_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                 icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-
-        await ctx.send(embed=roles_message, delete_after=60)
-
-    @commands.command(case_insensitive=True)
-    @commands.guild_only()
-    @checks.is_guild_owner()
-    async def search(self, ctx: commands.Context, channel: discord.TextChannel, word):
-        start = time.time()
-        result_channel = ctx.bot.utils.channel.search()
-        result_channel.delete_messages()
-        async for message in result_channel.history(limit=None):
-            await message.delete()
-        counter = 0
-        async for message in channel.history(limit=None, reverse=True):
-            if message.content.lower().__contains__(word.lower()):
-                await result_channel.send(message.content)
-                counter += 1
-        await ctx.channel.send(f'Fetch **{counter}** results in {time.time() - start} seconds!')
-
-    @commands.command(case_insensitive=True)
-    @commands.guild_only()
-    @checks.is_guild_owner()
+    @commands.is_owner()
     async def setup(self, ctx: commands.Context):
 
-        for member in ctx.bot.guilds[0].members:
-            if member.bot:
-                continue
-            await member.add_roles(self.bot.utils.role.user(), reason='Add all')
-            if self.bot.db.user.receive_notification(member):
-                await member.add_roles(self.bot.utils.role.notification(), reason='Add all')
+        return
 
         home_channel = ctx.bot.utils.channel.home()
         async for message in home_channel.history():
@@ -120,212 +60,214 @@ class AdminCommands:
         s_channel = ctx.bot.utils.channel.settings()
         async for message in s_channel.history():
             await message.delete()
-        notify_message = discord.Embed()
-        notify_message.colour = self.bot.utils.color.select()
-        notify_message.set_author(name='Notification', icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-        notify_message.set_thumbnail(url='https://server.luc1412.de/img/bell.png')
-        notify_message.description = f'**Click {self.bot.utils.icon.switch()} to toggle notification!**\n\n' \
-                                     f'If you enable it, you will be pinged if there is a new update from ' \
-                                     f'**EasySystem** or **EasyFortniteStats**\n\n' \
-                                     f'ℹ️*This setting has a 30 seconds Cooldown!*'
-        notify_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                  icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-        message = await s_channel.send(embed=notify_message)
+        update_notify_message = discord.Embed()
+        update_notify_message.colour = self.bot.utils.color.select()
+        update_notify_message.set_author(name='Notification', icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
+        update_notify_message.description = f'**Click {self.bot.utils.icon.switch()} to toggle notification!**\n\n' \
+                                            f'If you enable it, you will be pinged if there is a new update from ' \
+                                            f'**EasySystem** or **EasyFortniteStats**\n\n' \
+                                            f':information_source: *This setting has a 30 seconds Cooldown!*'
+        update_notify_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
+                                         icon_url=self.bot.cfg.get('Images.FooterIconURL'))
+        message = await s_channel.send(embed=update_notify_message)
         await message.add_reaction(ctx.bot.utils.icon.switch())
 
-    @commands.command(case_insensitive=True)
-    @commands.guild_only()
-    @checks.is_guild_owner()
-    async def restart(self, ctx: commands.Context):
-        import sys
-        restart_message = discord.Embed()
-        restart_message.colour = ctx.bot.utils.color.fail()
-        restart_message.description = 'Bot reboots in 3 seconds...'
-        await ctx.send(embed=restart_message)
-        await asyncio.sleep(3)
-        ctx.bot.info('Restart Bot...')
-        sys.exit()
+        auto_channel_message = discord.Embed()
+        auto_channel_message.colour = self.bot.utils.color.select()
+        auto_channel_message.set_author(name='Auto Channel Notification',
+                                        icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
+        auto_channel_message.set_thumbnail(url='https://i.imgur.com/0uhRrdP.png')
+        auto_channel_message.description = f'**React with Emoji to toggle Auto Channel Notifications.**\n\n' \
+                                           f':shopping_cart: **-** Toggle Auto Shop Notifications\n' \
+                                           f'{self.bot.utils.icon.challenges()} **-** Toggle Auto Shop Notifications\n\n' \
+                                           f':information_source: *This setting has a 30 seconds Cooldown!*'
+        auto_channel_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
+                                        icon_url=self.bot.cfg.get('Images.FooterIconURL'))
+        message = await s_channel.send(embed=auto_channel_message)
+        await message.add_reaction('🛒')
+        await message.add_reaction(self.bot.utils.icon.challenges())
 
     @commands.command(case_insensitive=True)
     @commands.guild_only()
-    @checks.is_guild_owner()
+    @commands.is_owner()
     async def update(self, ctx: commands.Context):
-        select_message = discord.Embed()
-        select_message.colour = ctx.bot.utils.color.select()
-        select_message.set_author(name='Update Assistant', icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-        select_message.description = f'__**In which channel should the update be sent?**__\n\n' \
-                                     f'{self.bot.utils.icon.general()} **- General Update**\n' \
-                                     f'{self.bot.utils.icon.efs_logo()} **- EasyFortniteStats**\n\n' \
-                                     f'Use {ctx.bot.utils.icon.fail()} to abort selection!'
-        select_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                  icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-        message = await ctx.send(embed=select_message)
-        await message.add_reaction(self.bot.utils.icon.fail())
-        for reaction in UpdateType.list():
-            await message.add_reaction(reaction.replace('%general_icon%', str(ctx.bot.utils.icon.general()))
-                                       .replace('%efs_icon%', str(ctx.bot.utils.icon.efs_logo()))
-                                       .replace('>', '').replace('<', ''))
+        selection = SelectionInterface(ctx, timeout=600)
 
-            def check(reaction, user):
-                emoji = str(reaction.emoji).replace(str(ctx.bot.utils.icon.general()), '%general_icon%') \
-                    .replace(str(ctx.bot.utils.icon.efs_logo()), '%efs_icon%')
-                return user is ctx.author and (emoji or reaction.emoji is self.bot.utils.icon.fail())
+        type_selection = selection.set_base_selection(SelectionType.REACTION,
+                                                      'Select type',
+                                                      f'**In which channel should the update be sent?**\n\n'
+                                                      f'{self.bot.utils.icon.general()} **- General Update**\n'
+                                                      f'{self.bot.utils.icon.efs_logo()} **- EasyFortniteStats**\n'
+                                                      f'{self.bot.utils.icon.ess_logo()} **- EasyServerStats**\n',
+                                                      reactions=[self.bot.utils.icon.general(),
+                                                                 self.bot.utils.icon.efs_logo(),
+                                                                 self.bot.utils.icon.ess_logo()])
 
+        title_selection = type_selection.add_result('*', SelectionType.TEXT, 'Select Title',
+                                                    '**Please enter the update title.**')
+
+        message_selection = title_selection.add_result('*', SelectionType.TEXT, 'Select Message',
+                                                       'Title successfully set!\n\n'
+                                                       '**Please enter the update message.**')
+
+        image_selection = message_selection.add_result('*', SelectionType.TEXT, 'Select Image',
+                                                       'Message successfully set!\n\n'
+                                                       '**Please enter the image url.**\n'
+                                                       'For no image enter `none` for no image.')
+
+        notification_selection = image_selection.add_result('*', SelectionType.REACTION, 'Select Notification',
+                                                            'Message successfully set!\n\n'
+                                                            '**Should we notify someone?**\n'
+                                                            '\U0001f514 **- Enable Notification**\n'
+                                                            '\U0001f515 **- Disable Notification**',
+                                                            reactions=['\U0001f514', '\U0001f515'])
+
+        def f1(result):
+            return result[1]
+
+        def f2(result):
+            return result[2]
+
+        def f3(result):
+            return result[3]
+
+        submit_selection = notification_selection.add_result('*',
+                                                             SelectionType.CONFIRM_SELECTION, ReplacedText('{}', f1),
+                                                             ReplacedText('▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n{}', f2),
+                                                             color=discord.Color.blurple(),
+                                                             image=ReplacedText('{}', f3))
+
+        async def a(context, result):
+            update_message = discord.Embed()
+            update_message.set_author(name=result[1])
+            update_message.colour = discord.Color.blurple()
+            update_message.description = f'▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n{result[2]}'
+
+            update_role = context.utils.role.notification()
+            await update_role.edit(mentionable=True, reason='Update mention')
+
+            channel = None
+            if str(selection.result()[0]) == str(self.bot.utils.icon.general()):
+                channel = context.utils.channel.general_update()
+            elif str(selection.result()[0]) == str(self.bot.utils.icon.efs_logo()):
+                channel = context.utils.channel.efs_update()
+            elif str(selection.result()[0]) == str(self.bot.utils.icon.ess_logo()):
+                channel = context.utils.channel.ess_update()
+
+            await channel.send(content=update_role.mention if selection.result()[4] == '\U0001f514' else None,
+                               embed=update_message)
+            await update_role.edit(mentionable=False, reason='Update mention')
+
+        submit_selection.set_action(a)
+
+        submit_selection.add_result('*', SelectionType.SUCCESS, 'Update successfully',
+                                    ':white_check_mark: Update successfully sent!')
+
+        await selection.start()
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    async def eval(self, ctx: commands.Context, *, body: str):
+        import textwrap
+        from contextlib import redirect_stdout
+        import traceback
+
+        """Evaluates a code"""
+
+        env = {
+            'bot': ctx.bot,
+            'ctx': ctx,
+            'channel': ctx.channel,
+            'author': ctx.author,
+            'guild': ctx.guild,
+            'message': ctx.message,
+            '_': self._last_result
+        }
+
+        env.update(globals())
+
+        body = self.cleanup_code(body)
+        stdout = io.StringIO()
+
+        to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
+        time1 = time.time()
         try:
-            reaction, user = await ctx.bot.wait_for('reaction_add', timeout=60.0, check=check)
-        except asyncio.TimeoutError:
-            await message.clear_reactions()
-            select_message.colour = ctx.bot.utils.color.fail()
-            select_message.set_author(name='Channel selection canceled!',
-                                      icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-            select_message.description = 'The Channel selection was aborted after one minute!'
-            select_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                      icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-            await message.edit(embed=select_message)
+            exec (to_compile, env)
+        except Exception as e:
+            await ctx.bot.send_error(ctx, message=f'```py\n{e.__class__.__name__}: {e}\n```')
+
+        func = env['func']
+        try:
+            with redirect_stdout(stdout):
+                ret = await func()
+        except Exception:
+            value = stdout.getvalue()
+            await ctx.bot.send_error(ctx, message=f'```py\n{value}{traceback.format_exc()}\n```')
         else:
-            await message.clear_reactions()
-            if reaction.emoji is self.bot.utils.icon.fail():
-                await self.selection_cancel(ctx, message)
-                return
+            value = stdout.getvalue()
 
-            channel = UpdateType.get_by_reaction(str(reaction.emoji)
-                                                 .replace(str(ctx.bot.utils.icon.general()), '%general_icon%')
-                                                 .replace(str(ctx.bot.utils.icon.efs_logo()), '%efs_icon%'))
+            time2 = time.time()
 
-            select_message.description = 'Channel successfully selected!\n\n' \
-                                         '**Please enter the update title**\n\n' \
-                                         'Reply with \'cancel\' to cancel'
-            await message.edit(embed=select_message)
+            eval_message = discord.Embed()
+            eval_message.colour = ctx.bot.utils.color.success()
+            eval_message.set_author(name='Code Eval', icon_url=ctx.bot.cfg.get('Images.IconSmallURL'))
+            eval_message.set_footer(
+                text=f'Took {time2 - time1:.2f} seconds to execute',
+                icon_url=ctx.bot.cfg.get('Images.FooterIconURL'))
 
-            def check(user_input):
-                return user_input.author is ctx.author
-
-            try:
-                user_input = await ctx.bot.wait_for('message', timeout=60.0, check=check)
-                await user_input.delete()
-            except asyncio.TimeoutError:
-                select_message.colour = ctx.bot.utils.color.fail()
-                select_message.set_author(name='Description input canceled!',
-                                          icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-                select_message.description = 'The Description input was aborted after one minute!'
-                select_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                          icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-                await message.edit(embed=select_message)
+            if ret is None:
+                if value:
+                    eval_message.description = f'\n📥 **Input:**\n' \
+                                               f'```py\n{body}```\n\n' \
+                                               f'📤 **Output:**\n' \
+                                               f'```py\n{value}\n```'
             else:
-                if user_input.content.lower() == 'cancel':
-                    await self.selection_cancel(ctx, message)
-                    return
+                self._last_result = ret
+                eval_message.description = f'\n📥 **Input:**\n' \
+                                           f'```py\n{body}```\n\n' \
+                                           f'📤 **Output:**\n' \
+                                           f'```py\n{value}{ret}\n```'
 
-                title = user_input.content
+            await ctx.send(embed=eval_message)
 
-                select_message.description = 'Title successfully set!\n\n' \
-                                             '**Please enter the update description**\n\n' \
-                                             'Reply with \'cancel\' to cancel'
-                await message.edit(embed=select_message)
+    @commands.command(hidden=True)
+    @commands.guild_only()
+    async def agree(self, ctx: commands.Context):
+        return
+        if ctx.author.roles.__contains__(ctx.bot.utils.role.user()):
+            return
+        join_message = discord.Embed()
+        join_message.colour = self.bot.utils.color.success()
+        join_message.set_author(name='Welcome on EasySystem Support!', icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
+        join_message.set_thumbnail(url=ctx.author.avatar_url)
+        join_message.description = f'Please visit {self.bot.utils.channel.home().mention} for rules.\n' \
+                                   f'If you don\'t want to get any notification from the server, go to ' \
+                                   f'{self.bot.utils.channel.settings().mention} and turn it off'
+        join_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
+                                icon_url=self.bot.cfg.get('Images.FooterIconURL'))
 
-                def check(user_input):
-                    return user_input.author is ctx.author
+        await self.bot.utils.channel.general().send(content=ctx.author.mention, embed=join_message)
+        if await self.bot.db.users.receive_notification(ctx.author):
+            await ctx.author.add_roles(self.bot.utils.role.notification(), reason='Notification Joined')
+        if await self.bot.db.users.receive_shop_notification(ctx.author):
+            await ctx.author.add_roles(self.bot.utils.role.shop(), reason='Shop Notification Joined')
+        if await self.bot.db.users.receive_challenges_notification(ctx.author):
+            await ctx.author.add_roles(self.bot.utils.role.challenges(), reason='Challenges Notification Joined')
 
-                try:
-                    user_input = await ctx.bot.wait_for('message', timeout=600.0, check=check)
-                    await user_input.delete()
-                except asyncio.TimeoutError:
-                    select_message.colour = ctx.bot.utils.color.fail()
-                    select_message.set_author(name='Description input canceled!',
-                                              icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-                    select_message.description = 'The Description input was aborted after one minute!'
-                    select_message.set_footer(text='', icon_url='')
-                    await message.edit(embed=select_message)
-                else:
-                    if user_input.content.lower() == 'cancel':
-                        await self.selection_cancel(ctx, message)
-                        return
+    @commands.command(hidden=True, aliases=['fortnite', 'efs', 'apex', 'eas', 'suggest', 'fm', 'ftn'])
+    @commands.guild_only()
+    async def fn(self, ctx: commands.Context):
+        if ctx.channel is ctx.bot.utils.channel.commands() or ctx.channel is ctx.bot.utils.channel.admin_commands():
+            return
+        command_message = discord.Embed()
+        command_message.colour = self.bot.utils.color.success()
+        command_message.set_author(name='Commands not allowed!', icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
+        command_message.description = f'Please go in {ctx.bot.utils.channel.commands().mention} to use commands.'
+        command_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
+                                   icon_url=self.bot.cfg.get('Images.FooterIconURL'))
 
-                    description = user_input.content
-
-                    select_message.description = 'Description successfully set!\n\n' \
-                                                 '**Please enter the image url.** ' \
-                                                 'For no image enter \'none\' for no image.\n\n' \
-                                                 'Reply with \'cancel\' to cancel'
-                    await message.edit(embed=select_message)
-
-                    def check(user_input):
-                        return user_input.author is ctx.author
-
-                    try:
-                        user_input = await ctx.bot.wait_for('message', timeout=60.0, check=check)
-                        await user_input.delete()
-                    except asyncio.TimeoutError:
-                        select_message.colour = ctx.bot.utils.color.fail()
-                        select_message.set_author(name='Image input canceled!',
-                                                  icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-                        select_message.description = 'The image input was aborted after one minute!'
-                        select_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                                  icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-                        await message.edit(embed=select_message)
-                    else:
-                        if user_input.content.lower() == 'cancel':
-                            await self.selection_cancel(ctx, message)
-                            return
-
-                        image_url = None if user_input.content == 'none' else user_input.content
-
-                        update_message = discord.Embed()
-                        update_message.colour = discord.Colour.blurple()
-                        update_message.set_author(name=title,
-                                                  url=discord.Embed.Empty
-                                                  if channel is not UpdateType.EfsUpdate
-                                                  else 'https://Luc1412.de/efs-update',
-                                                  icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-                        update_message.description = description
-                        if image_url:
-                            update_message.set_image(url=image_url)
-                        update_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                                  icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-                        update_message.timestamp = datetime.datetime.now()
-                        await message.edit(embed=update_message,
-                                           content=f'Use {ctx.bot.utils.icon.success()} to send update! '
-                                                   f'(Use {ctx.bot.utils.icon.fail()} to cancel)')
-                        await message.add_reaction(ctx.bot.utils.icon.success())
-                        await message.add_reaction(ctx.bot.utils.icon.fail())
-
-                        def check(reaction, user):
-                            return user is ctx.author and (reaction.emoji.id is ctx.bot.utils.icon.success().id or
-                                                           reaction.emoji.id is ctx.bot.utils.icon.fail().id)
-
-                        try:
-                            reaction, user = await ctx.bot.wait_for('reaction_add', timeout=600.0, check=check)
-                        except asyncio.TimeoutError:
-                            await message.clear_reactions()
-                            select_message.timestamp = None
-                            select_message.colour = ctx.bot.utils.color.fail()
-                            select_message.set_author(name='Image input canceled!',
-                                                      icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
-                            select_message.description = 'The image input was aborted after one minute!'
-                            select_message.set_footer(text=self.bot.cfg.get('Core.Footer'),
-                                                      icon_url=self.bot.cfg.get('Images.FooterIconURL'))
-                            await message.edit(embed=select_message)
-                        else:
-                            await message.clear_reactions()
-                            if reaction.emoji is self.bot.utils.icon.fail():
-                                await self.selection_cancel(ctx, message)
-                                return
-                            elif reaction.emoji is self.bot.utils.icon.success():
-                                update_role = ctx.bot.utils.role.notification()
-                                await update_role.edit(mentionable=True, reason='Update mention')
-
-                                if channel is UpdateType.GeneralUpdate:
-                                    await ctx.bot.utils.channel.general_update().send(content=update_role.mention,
-                                                                                      embed=update_message)
-                                elif channel is UpdateType.EfsUpdate:
-                                    await ctx.bot.utils.channel.efs_update().send(content=update_role.mention,
-                                                                                  embed=update_message)
-
-                                await update_role.edit(mentionable=False, reason='Update mention')
-
-                                select_message.colour = ctx.bot.utils.color.success()
-                                select_message.description = f'{ctx.bot.utils.icon.success()} Update successfully sent!'
-                                await message.edit(content=None, embed=select_message)
+        await ctx.send(embed=command_message, delete_after=15)
+        await ctx.message.delete()
 
 
 def setup(bot):

@@ -3,15 +3,19 @@ from configparser import ConfigParser
 
 class Config:
 
-    def __init__(self, bot):
-        self._bot = bot
+    def __init__(self, test=False):
+        self._test = test
         self._config = ConfigParser()
         self._loaded_config = dict()
 
         self.load()
 
     def load(self):
-        self._config.read('configs/config.ini', encoding='utf-8')
+
+        if not self._test:
+            self._config.read('config/config.ini', encoding='utf-8')
+        else:
+            self._config.read('config/test_config.ini', encoding='utf-8')
 
         sections = self._config.sections()
         for section in sections:

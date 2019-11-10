@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-
 import asyncio
 import datetime
+import discord
 import gzip
 import logging
 import os
@@ -9,35 +8,25 @@ import shutil
 import sys
 import time
 import traceback
-
-import discord
-import pytz
 from discord.ext import commands
-from discord.ext.commands import CommandOnCooldown
-
 from utils.config import Config
+from utils.context import Context
 from utils.database import Database
 from utils.utils import Utils
 
 start_time = time.time()
 
 
-async def get_prefix(client, message):
-    return '!'
-
-
-initial_extensions = ['cogs.admin',
-                      'cogs.events']
-
-
-class Bot(commands.Bot):
+class EasySystem(commands.Bot):
 
     def __init__(self, *args, **kwargs):
         self.logger = set_logger()
-        self.cfg = Config(self)
+        self.cfg = Config(False)
+
+        super().__init__(*args, command_prefix='!', **kwargs, owner_id=int(self.cfg.get('Core.OwnerID')))
+
         self.db = Database(self)
         self.utils = Utils(self)
-        super().__init__(*args, command_prefix=get_prefix, **kwargs)
 
     async def send_error(self, ctx: commands.Context, message: str, dm=False):
         error_message = discord.Embed()
@@ -53,96 +42,66 @@ class Bot(commands.Bot):
                                      icon_url=ctx.bot.cfg.get('Images.IconSmallURL'))
             await ctx.send(embed=error_message)
 
-    async def send_embed(self, ctx: commands.Context, title, content, color):
-        embed_message = discord.Embed()
-        embed_message.colour = color
-        embed_message.set_author(name=title, icon_url='')
-        embed_message.description = content
-        embed_message.set_footer(text='', icon_url='')
 
-        await ctx.send(embed=embed_message)
-
-
-def init(bot_class=Bot):
+def init(bot_class=EasySystem):
     client = bot_class(description='EasySystem Bot', case_insensitive=True)
+    client.remove_command("help")
 
-    for extension in initial_extensions:
+    extensions = client.cfg.get('Core.InitialCogs').split(', ')
+
+    for extension in extensions:
         try:
-            client.load_extension(extension)
+            client.load_extension(f'cogs.{extension}')
         except Exception:
             client.logger.exception(f'Failed to load extension {extension}.')
             traceback.print_exc()
 
     @client.event
     async def on_ready():
-        bot.loop.create_task(update())
-        bot.logger.info(f'[CORE] The bot was started successfully after {str(int(time.time() - start_time))} seconds!')
+        global start_time
+        if start_time == 0.0:
+            return
+        bot.logger.info(f'[CORE] The bot was started successfully after {int(time.time() - start_time)} seconds.')
+        start_time = 0.0
 
     @client.event
     async def on_command_error(ctx, error):
 
-        ignored = (commands.MissingRequiredArgument, commands.CommandNotFound)
+        ignored = (commands.MissingRequiredArgument, commands.CommandNotFound, commands.BadArgument, discord.NotFound,
+                   commands.NotOwner)
 
         error = getattr(error, 'original', error)
 
         if isinstance(error, ignored):
             return
 
-        if isinstance(error, commands.NoPrivateMessage):
-            return await bot.send_error(ctx, error='This command cannot be used in private messages.', dm=True)
-        elif isinstance(error, commands.DisabledCommand):
-            return await bot.send_error(ctx, 'General.CommandMaintenance')
-        elif isinstance(error, discord.Forbidden):
-            return await ctx.bot.send_perm_warn(ctx)
-        elif isinstance(error, CommandOnCooldown):
-            return await bot.send_error(ctx, error=ctx.bot.lang.get(ctx.guild, 'General.CooldownMessage')
-                                        .replace('%seconds%', str(int(error.retry_after + 1.00))))
-        else:
-            raise error
+        raise error
 
     @client.event
     async def on_error(event, *args, **kwargs):
-        import traceback
-        bot.logger.exception(traceback.format_exc())
-        return
-        bot.logger.exception(traceback.format_exc())
-
-        error_message = discord.Embed()
-        error_message.colour = bot.utils.color.fail()
-        error_message.set_author(name='An error occurred!',
-                                 icon_url=bot.cfg.get('Images.IconSmallURL'))
-        error_message.description = f'```py\n{traceback.format_exc()}\n```'
-        error_message.set_footer(text=bot.cfg.get('Core.Footer'),
-                                 icon_url=bot.cfg.get('Images.FooterIconURL'))
-        error_message.timestamp = datetime.datetime.now(pytz.timezone('Europe/Berlin'))
-        await bot.utils.channel.error().send(embed=error_message)
+        await bot.utils.report_exception(traceback.format_exc())
 
     @client.event
-    async def on_command(ctx: commands.Context):
-        if not isinstance(ctx.channel, discord.TextChannel):
+    async def on_command(ctx):
+        client.logger.info(f'[CORE] {ctx.author} on {ctx.guild.name}: {ctx.message.content}')
+
+    @client.event
+    async def on_message(message: discord.Message):
+        if message.author.bot:
             return
-        client.logger.info(f'[CORE] {ctx.author.name} on {ctx.guild.name}: {ctx.message.content}')
+        if not isinstance(message.channel, discord.TextChannel):
+            return
+        await client.process_commands(message)
 
     @client.event
     async def process_commands(message: discord.Message):
-        ctx = await client.get_context(message, cls=commands.Context)
-        if ctx.valid:
-            await client.invoke(ctx)
+        await client.wait_until_ready()
+        ctx = await client.get_context(message, cls=Context)
+        if not ctx.valid:
+            return
+        await client.invoke(ctx)
 
     return client
-
-
-class DiscordHandler(logging.Handler):
-
-    def __init__(self, channel: discord.TextChannel):
-        super().__init__()
-        self._channel = channel
-
-    def emit(self, record):
-        if not bot.is_ready():
-            return
-        log_entry = self.format(record)
-        bot.loop.create_task(self._channel.send(log_entry))
 
 
 def set_logger():
@@ -186,34 +145,7 @@ def set_logger():
     return logger
 
 
-async def update():
-    motd_nbr = 0
-
-    while False:  # TODO: Change
-        motd_data = bot.utils.get_motd_playlist()[motd_nbr]
-        motd_type = None
-        if motd_data[0] == 'p':
-            motd_type = discord.ActivityType.playing
-        elif motd_data[0] == 'l':
-            motd_type = discord.ActivityType.listening
-        elif motd_data[0] == 'w':
-            motd_type = discord.ActivityType.watching
-        activity = discord.Activity()
-        activity.type = motd_type
-        activity.name = motd_data[1]
-        await bot.change_presence(activity=activity, status=discord.Status.online)
-
-        if motd_nbr >= len(bot.utils.get_motd_playlist()) - 1:
-            motd_nbr = 0
-        else:
-            motd_nbr += 1
-
-        bot.db.stats.set_guild_amount()
-        await asyncio.sleep(60)
-
-
-async def main(efs_bot: Bot):
-    efs_bot.remove_command("help")
+async def main(efs_bot: EasySystem):
     await efs_bot.login(efs_bot.cfg.get('Core.Token'))
     await efs_bot.connect()
 
