@@ -44,9 +44,6 @@ class Events(commands.Cog):
             return
         await message.remove_reaction(payload.emoji, member)
         if str(payload.emoji) == '🛒':
-            if self.bot.utils.countdown.check(member):
-                return
-            self.bot.utils.countdown.add(member)
             change_message = discord.Embed()
             change_message.set_author(name='Successfully changed Auto Shop Notifications!',
                                       icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
@@ -71,9 +68,6 @@ class Events(commands.Cog):
                 await member.add_roles(self.bot.utils.role.shop(), reason='Enabled Shop Notifications')
             await member.send(embed=change_message)
         elif payload.emoji.id == self.bot.utils.icon.challenges().id:
-            if self.bot.utils.countdown.check(member):
-                return
-            self.bot.utils.countdown.add(member)
             change_message = discord.Embed()
             change_message.set_author(name='Successfully changed Auto Challenge Notifications!',
                                       icon_url=self.bot.cfg.get('Images.IconSmallUrl'))
@@ -98,9 +92,6 @@ class Events(commands.Cog):
                 await member.add_roles(self.bot.utils.role.challenges(), reason='Enabled Challenges Notifications')
             await member.send(embed=change_message)
         elif payload.emoji.id == self.bot.utils.icon.switch().id:
-            if self.bot.utils.countdown.check(member):
-                return
-            self.bot.utils.countdown.add(member)
             change_message = discord.Embed()
             change_message.set_author(name='Successfully changed notifications!',
                                       icon_url=self.bot.cfg.get('Images.IconSmallUrl'))

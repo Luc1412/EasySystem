@@ -1,6 +1,4 @@
 import discord
-import time
-from enum import Enum
 
 
 class Utils:
@@ -43,8 +41,8 @@ class Icon:
         emoji_id = int(self.bot.cfg.get('Icons.EasyServerStats'))
         return self.bot.get_emoji(emoji_id)
 
-    def general(self):
-        emoji_id = int(self.bot.cfg.get('Icons.General'))
+    def announcement(self):
+        emoji_id = int(self.bot.cfg.get('Icons.Announcement'))
         return self.bot.get_emoji(emoji_id)
 
     def challenges(self):

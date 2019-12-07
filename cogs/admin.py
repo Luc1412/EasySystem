@@ -1,10 +1,13 @@
 import datetime
+import typing
+
 import discord
 import io
 import time
 from discord.ext import commands
 
 from bot import EasySystem
+from utils.context import Context
 from utils.selection import SelectionInterface, SelectionType, ReplacedText
 
 
@@ -96,10 +99,10 @@ class AdminCommands(commands.Cog):
         type_selection = selection.set_base_selection(SelectionType.REACTION,
                                                       'Select type',
                                                       f'**In which channel should the update be sent?**\n\n'
-                                                      f'{self.bot.utils.icon.general()} **- General Update**\n'
+                                                      f'{self.bot.utils.icon.announcement()} **- General Update**\n'
                                                       f'{self.bot.utils.icon.efs_logo()} **- EasyFortniteStats**\n'
                                                       f'{self.bot.utils.icon.ess_logo()} **- EasyServerStats**\n',
-                                                      reactions=[self.bot.utils.icon.general(),
+                                                      reactions=[self.bot.utils.icon.announcement(),
                                                                  self.bot.utils.icon.efs_logo(),
                                                                  self.bot.utils.icon.ess_logo()])
 
@@ -147,7 +150,7 @@ class AdminCommands(commands.Cog):
             await update_role.edit(mentionable=True, reason='Update mention')
 
             channel = None
-            if str(selection.result()[0]) == str(self.bot.utils.icon.general()):
+            if str(selection.result()[0]) == str(self.bot.utils.icon.announcement()):
                 channel = context.utils.channel.general_update()
             elif str(selection.result()[0]) == str(self.bot.utils.icon.efs_logo()):
                 channel = context.utils.channel.efs_update()
@@ -165,7 +168,55 @@ class AdminCommands(commands.Cog):
 
         await selection.start()
 
-    @commands.command(hidden=True)
+    @commands.command()
+    @commands.is_owner()
+    async def emoji(self, ctx: Context, action: str, name_or_id: typing.Union[str, int] = None):
+        emoji_guild = ctx.bot.get_guild(652557455749939210)
+        if action == 'list':
+            emoji_message = ''
+            for emoji in emoji_guild.emojis:
+                emoji_message += f'{emoji} **-** `{emoji.id}`\n'
+            if len(emoji_guild.emojis) == 0:
+                emoji_message = 'No emoji on the emoji server.'
+            message = discord.Embed()
+            message.colour = discord.Color.dark_magenta()
+            message.title = 'Easy System Emoji'
+            message.description = emoji_message
+            await ctx.send(embed=message)
+        elif action == 'add':
+            if name_or_id is None:
+                return await ctx.bot.send_error(ctx, 'Please provide a emoji name')
+            if len(ctx.message.attachments) != 1:
+                return await ctx.bot.send_error(ctx, 'If you want to add a emoji you need to upload a file.')
+            image = await ctx.message.attachments[0].read()
+            try:
+                emoji = await emoji_guild.create_custom_emoji(name=name_or_id, image=image)
+            except discord.HTTPException as e:
+                return await ctx.bot.send_error(ctx, f'An error occurred: {e.text}')
+
+            message = discord.Embed()
+            message.colour = discord.Color.green()
+            message.set_thumbnail(url=emoji.url)
+            message.description = f'Successfully created emoji with the name **{emoji.name}** and the id `{emoji.id}`'
+            await ctx.send(embed=message)
+        elif action == 'remove':
+            if name_or_id is None:
+                return await ctx.bot.send_error(ctx, 'Please provide a emoji id')
+            try:
+                emoji = await emoji_guild.fetch_emoji(name_or_id)
+            except discord.NotFound:
+                return await ctx.bot.send_error(ctx, 'The given emoji wasn\'t found!')
+            await emoji.delete()
+
+            message = discord.Embed()
+            message.colour = discord.Color.dark_red()
+            message.set_thumbnail(url=emoji.url)
+            message.description = f'Successfully deleted emoji with the name **{emoji.name}** and the id `{emoji.id}`'
+            await ctx.send(embed=message)
+        else:
+            return await ctx.bot.send_error(ctx, 'Please use `!emoji <list/add/remove> [name or id]`')
+
+    @commands.command()
     @commands.is_owner()
     async def eval(self, ctx: commands.Context, *, body: str):
         import textwrap
@@ -230,7 +281,7 @@ class AdminCommands(commands.Cog):
 
             await ctx.send(embed=eval_message)
 
-    @commands.command(hidden=True)
+    @commands.command()
     @commands.guild_only()
     async def agree(self, ctx: commands.Context):
         return
@@ -254,7 +305,7 @@ class AdminCommands(commands.Cog):
         if await self.bot.db.users.receive_challenges_notification(ctx.author):
             await ctx.author.add_roles(self.bot.utils.role.challenges(), reason='Challenges Notification Joined')
 
-    @commands.command(hidden=True, aliases=['fortnite', 'efs', 'apex', 'eas', 'suggest', 'fm', 'ftn'])
+    @commands.command(aliases=['fortnite', 'efs', 'apex', 'eas', 'suggest', 'fm', 'ftn'])
     @commands.guild_only()
     async def fn(self, ctx: commands.Context):
         if ctx.channel is ctx.bot.utils.channel.commands() or ctx.channel is ctx.bot.utils.channel.admin_commands():
