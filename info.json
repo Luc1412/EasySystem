@@ -1,0 +1,8 @@
+{
+  "author": ["Lucas Hardt (Luc1412#1412)"],
+  "install_msg": "Successfully installed repo.",
+  "name": "EasySystem Cogs",
+  "short": "EasySystem Redbot cogs.",
+  "description": "Useful tools for managing your Discord bot support server.",
+  "tags": "Utility"
+}

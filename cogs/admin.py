@@ -8,7 +8,7 @@ from discord.ext import commands
 
 from bot import EasySystem
 from utils.context import Context
-from utils.selection import SelectionInterface, SelectionType, ReplacedText
+from cogs.selection import SelectionInterface, SelectionType, ReplacedText
 
 
 class AdminCommands(commands.Cog):
