@@ -19,6 +19,7 @@ class SelectionBase:
         self.interface_reactions = [self.interface.fail_emoji] if kwargs.get('first', False) else \
             [self.interface.back_emoji, self.interface.fail_emoji]
 
+        self.author = kwargs.get('author_text', discord.embeds.EmptyEmbed)
         self.footer = kwargs.get('footer_text', discord.embeds.EmptyEmbed)
         self.header_url = kwargs.get('header_url', discord.embeds.EmptyEmbed)
         self.header_icon = kwargs.get('header_icon', self.interface.header_icon)
@@ -48,11 +49,14 @@ class SelectionBase:
         msg = discord.Embed()
         msg.colour = self.color
 
-        msg.set_author(
-            name=self.title.get(self.interface.result()) if type(self.title) is ReplacedText else self.title,
-            url=self.header_url,
-            icon_url=self.header_icon
-        )
+        msg.title = self.title.get(self.interface.result()) if type(self.title) is ReplacedText else self.title
+
+        if self.author:
+            msg.set_author(
+                name=self.author.get(self.interface.result()) if type(self.author) is ReplacedText else self.author,
+                url=self.header_url,
+                icon_url=self.header_icon
+            )
 
         msg.description = self.text.get(self.interface.result()) if type(self.text) is ReplacedText else self.text
         for field in self.fields:

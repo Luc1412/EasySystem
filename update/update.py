@@ -1,8 +1,12 @@
+from contextlib import suppress
 from typing import Union
 
 import discord
+from discord.ext.commands import PartialEmojiConverter
 from redbot.core import Config
 from redbot.core.commands import commands, Context
+
+from update.selection import SelectionInterface, SelectionType, ReplacedText
 
 BaseCog = getattr(commands, "Cog", object)
 
@@ -20,6 +24,7 @@ class Update(BaseCog):
         }
         default_channel_settings = {
             "name": None,
+            "emoji": None,
             "icon_url": None,
             "role_id": None,
             "footer_icon_url": None,
@@ -30,7 +35,109 @@ class Update(BaseCog):
 
     @commands.command(name='update')
     async def _update(self, ctx: Context):
-        pass
+        """Sends a update message to the selected channel with the selected parameters"""
+        selection = SelectionInterface(ctx, timeout=600)
+
+        update_channels = {}
+        for cid, data in (await self.settings.all_channels()).items():
+            if not ctx.guild.get_channel(cid):
+                continue
+            emoji = data['emoji']
+            try:
+                emoji = int(emoji)
+                emoji = self.bot.get_emoji(emoji)
+                if not emoji:
+                    continue
+            except ValueError:
+                pass
+            update_channels[emoji] = data
+
+        if len(update_channels) < 1:
+            embed = discord.Embed(color=discord.Colour.dark_red())
+            embed.description = f'No update channel has been configured yet. Checkout `{ctx.prefix}updateset`'
+            return await ctx.send(embed=embed)
+
+        if len(update_channels) > 1:
+            desc = '\n'.join([f'{str(e)} **-** {data["name"]}' for e, (cid, data) in update_channels.items()])
+
+            type_selection = selection.set_base_selection(
+                SelectionType.REACTION,
+                'Select Update Channel',
+                f'**To which channel should the update message be sent?**\n\n{desc}',
+                reactions=update_channels.keys())
+            title_selection = type_selection.add_result('*', SelectionType.TEXT, 'Select Title',
+                                                        '**Please enter the update title.**')
+        else:
+            title_selection = selection.set_base_selection(SelectionType.TEXT, 'Select Title',
+                                                           '**Please enter the update title.**')
+
+        message_selection = title_selection.add_result('*', SelectionType.TEXT, 'Select Message',
+                                                       'Title successfully set!\n\n'
+                                                       '**Please enter the update message.**')
+
+        image_selection = message_selection.add_result('*', SelectionType.TEXT, 'Select Image',
+                                                       'Message successfully set!\n\n'
+                                                       '**Please enter the image url.**\n'
+                                                       'For no image enter `none` for no image.')
+
+        notification_selection = image_selection.add_result('*', SelectionType.REACTION, 'Select Notification',
+                                                            'Message successfully set!\n\n'
+                                                            '**Should we notify someone?**\n'
+                                                            '\U00000031 **- Disable notifications**\n'
+                                                            '\U00000032 **- Notify role**\n'
+                                                            '\U00000033 **- Notify everyone**',
+                                                            reactions=['\U00000031', '\U00000032', '\U00000033'])
+
+        def f1(result):
+            data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+                update_channels[str(result[0])]
+
+
+        submit_selection = notification_selection.add_result(
+            '*',
+            SelectionType.CONFIRM_SELECTION,
+            ReplacedText('{}', lambda x: x[1] if len(update_channels) > 1 else x[0]),
+            ReplacedText('{}', lambda x: x[2] if len(update_channels) > 1 else x[1]),
+            color=self.bot.get_embed_colour(ctx.message),
+            thumbnail=ReplacedText('{}', f1),
+            image=ReplacedText('{}', lambda x: x[3] if len(update_channels) > 1 else x[2])
+        )
+
+        async def a(context, result):
+            data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+                update_channels[str(result[0])]
+
+            update_message = discord.Embed()
+            update_message.title = result[1] if len(update_channels) > 1 else result[0]
+            update_message.colour = self.bot.get_embed_colour(ctx.message)
+            update_message.description = result[2] if len(update_channels) > 1 else result[1]
+            if (result[3] if len(update_channels) > 1 else result[2]).lower() != 'none':
+                update_message.set_image(url=result[3] if len(update_channels) > 1 else result[2])
+            if data['icon_url']:
+                update_message.set_thumbnail(url=data['icon_url'])
+
+            channel = context.bot.get_channel(data_['channel_id'])
+
+            role = context.guild.get_role(data['role_id'])
+
+            mention = None
+            mention_r = result[4] if len(update_channels) > 1 else result[3]
+            if mention_r == '\U00000032':
+                mention = role.mention
+            elif mention_r == '\U00000033':
+                mention = '@everyone'
+
+            message = await channel.send(content=mention, embed=update_message)
+            if channel.is_news():
+                with suppress(discord.Forbidden):
+                    await message.publish()
+
+        submit_selection.set_action(a)
+
+        submit_selection.add_result('*', SelectionType.SUCCESS, 'Update successfully',
+                                    ':white_check_mark: Update successfully sent!')
+
+        await selection.start()
 
     @commands.group(name='updateset')
     async def _update_set(self, ctx: Context):
@@ -194,4 +301,3 @@ class Update(BaseCog):
                             f'> **Channel:** {channel.mention}\n' \
                             f'> **Text:** {text}'
         return await ctx.send(embed=embed)
-

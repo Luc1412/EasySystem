@@ -2,13 +2,11 @@ import datetime
 import typing
 
 import discord
-import io
-import time
 from discord.ext import commands
 
 from bot import EasySystem
 from utils.context import Context
-from cogs.selection import SelectionInterface, SelectionType, ReplacedText
+from update.selection import SelectionInterface, SelectionType, ReplacedText
 
 
 class AdminCommands(commands.Cog):
@@ -90,84 +88,6 @@ class AdminCommands(commands.Cog):
         await message.add_reaction('🛒')
         await message.add_reaction(self.bot.utils.icon.challenges())
 
-    @commands.command(case_insensitive=True)
-    @commands.guild_only()
-    @commands.is_owner()
-    async def update(self, ctx: commands.Context):
-        selection = SelectionInterface(ctx, timeout=600)
-
-        type_selection = selection.set_base_selection(SelectionType.REACTION,
-                                                      'Select type',
-                                                      f'**In which channel should the update be sent?**\n\n'
-                                                      f'{self.bot.utils.icon.announcement()} **- General Update**\n'
-                                                      f'{self.bot.utils.icon.efs_logo()} **- EasyFortniteStats**\n'
-                                                      f'{self.bot.utils.icon.ess_logo()} **- EasyServerStats**\n',
-                                                      reactions=[self.bot.utils.icon.announcement(),
-                                                                 self.bot.utils.icon.efs_logo(),
-                                                                 self.bot.utils.icon.ess_logo()])
-
-        title_selection = type_selection.add_result('*', SelectionType.TEXT, 'Select Title',
-                                                    '**Please enter the update title.**')
-
-        message_selection = title_selection.add_result('*', SelectionType.TEXT, 'Select Message',
-                                                       'Title successfully set!\n\n'
-                                                       '**Please enter the update message.**')
-
-        image_selection = message_selection.add_result('*', SelectionType.TEXT, 'Select Image',
-                                                       'Message successfully set!\n\n'
-                                                       '**Please enter the image url.**\n'
-                                                       'For no image enter `none` for no image.')
-
-        notification_selection = image_selection.add_result('*', SelectionType.REACTION, 'Select Notification',
-                                                            'Message successfully set!\n\n'
-                                                            '**Should we notify someone?**\n'
-                                                            '\U0001f514 **- Enable Notification**\n'
-                                                            '\U0001f515 **- Disable Notification**',
-                                                            reactions=['\U0001f514', '\U0001f515'])
-
-        def f1(result):
-            return result[1]
-
-        def f2(result):
-            return result[2]
-
-        def f3(result):
-            return result[3]
-
-        submit_selection = notification_selection.add_result('*',
-                                                             SelectionType.CONFIRM_SELECTION, ReplacedText('{}', f1),
-                                                             ReplacedText('▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n{}', f2),
-                                                             color=discord.Color.blurple(),
-                                                             image=ReplacedText('{}', f3))
-
-        async def a(context, result):
-            update_message = discord.Embed()
-            update_message.set_author(name=result[1])
-            update_message.colour = discord.Color.blurple()
-            update_message.description = f'▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬\n\n{result[2]}'
-
-            update_role = context.utils.role.notification()
-            await update_role.edit(mentionable=True, reason='Update mention')
-
-            channel = None
-            if str(selection.result()[0]) == str(self.bot.utils.icon.announcement()):
-                channel = context.utils.channel.general_update()
-            elif str(selection.result()[0]) == str(self.bot.utils.icon.efs_logo()):
-                channel = context.utils.channel.efs_update()
-            elif str(selection.result()[0]) == str(self.bot.utils.icon.ess_logo()):
-                channel = context.utils.channel.ess_update()
-
-            await channel.send(content=update_role.mention if selection.result()[4] == '\U0001f514' else None,
-                               embed=update_message)
-            await update_role.edit(mentionable=False, reason='Update mention')
-
-        submit_selection.set_action(a)
-
-        submit_selection.add_result('*', SelectionType.SUCCESS, 'Update successfully',
-                                    ':white_check_mark: Update successfully sent!')
-
-        await selection.start()
-
     @commands.command()
     @commands.is_owner()
     async def emoji(self, ctx: Context, action: str, name_or_id: typing.Union[str, int] = None):
@@ -215,71 +135,6 @@ class AdminCommands(commands.Cog):
             await ctx.send(embed=message)
         else:
             return await ctx.bot.send_error(ctx, 'Please use `!emoji <list/add/remove> [name or id]`')
-
-    @commands.command()
-    @commands.is_owner()
-    async def eval(self, ctx: commands.Context, *, body: str):
-        import textwrap
-        from contextlib import redirect_stdout
-        import traceback
-
-        """Evaluates a code"""
-
-        env = {
-            'bot': ctx.bot,
-            'ctx': ctx,
-            'channel': ctx.channel,
-            'author': ctx.author,
-            'guild': ctx.guild,
-            'message': ctx.message,
-            '_': self._last_result
-        }
-
-        env.update(globals())
-
-        body = self.cleanup_code(body)
-        stdout = io.StringIO()
-
-        to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
-        time1 = time.time()
-        try:
-            exec (to_compile, env)
-        except Exception as e:
-            await ctx.bot.send_error(ctx, message=f'```py\n{e.__class__.__name__}: {e}\n```')
-
-        func = env['func']
-        try:
-            with redirect_stdout(stdout):
-                ret = await func()
-        except Exception:
-            value = stdout.getvalue()
-            await ctx.bot.send_error(ctx, message=f'```py\n{value}{traceback.format_exc()}\n```')
-        else:
-            value = stdout.getvalue()
-
-            time2 = time.time()
-
-            eval_message = discord.Embed()
-            eval_message.colour = ctx.bot.utils.color.success()
-            eval_message.set_author(name='Code Eval', icon_url=ctx.bot.cfg.get('Images.IconSmallURL'))
-            eval_message.set_footer(
-                text=f'Took {time2 - time1:.2f} seconds to execute',
-                icon_url=ctx.bot.cfg.get('Images.FooterIconURL'))
-
-            if ret is None:
-                if value:
-                    eval_message.description = f'\n📥 **Input:**\n' \
-                                               f'```py\n{body}```\n\n' \
-                                               f'📤 **Output:**\n' \
-                                               f'```py\n{value}\n```'
-            else:
-                self._last_result = ret
-                eval_message.description = f'\n📥 **Input:**\n' \
-                                           f'```py\n{body}```\n\n' \
-                                           f'📤 **Output:**\n' \
-                                           f'```py\n{value}{ret}\n```'
-
-            await ctx.send(embed=eval_message)
 
     @commands.command()
     @commands.guild_only()
