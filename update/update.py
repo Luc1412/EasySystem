@@ -45,13 +45,13 @@ class Update(BaseCog):
         if existing_name:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = f'The channel is already a update channel.\n' \
-                                f'> **Channel:** {channel.mention}' \
+                                f'> **Channel:** {channel.mention}\n' \
                                 f'> **Name:** {existing_name}'
             return await ctx.send(embed=embed)
         await self.settings.channel(channel).name.set(name)
         embed = discord.Embed(colour=discord.Colour.green())
         embed.description = f'The channel has been successfully added as a update channel.\n' \
-                            f'> **Channel:** {channel.mention}' \
+                            f'> **Channel:** {channel.mention}\n' \
                             f'> **Name:** {name}'
         return await ctx.send(embed=embed)
 
@@ -67,17 +67,29 @@ class Update(BaseCog):
         await self.settings.channel(channel).clear()
         embed = discord.Embed(colour=discord.Colour.blue())
         embed.description = f'The channel has been successfully removed as a update channel.\n' \
-                            f'> **Channel:** {channel.mention}' \
+                            f'> **Channel:** {channel.mention}\n' \
                             f'> **Name:** {existing_name}'
         return await ctx.send(embed=embed)
 
     @_update_set.command(name='list')
     async def _update_set_list(self, ctx: Context):
         """List all update channels"""
+        embed = discord.Embed(color=discord.Colour.dark_magenta())
+        embed.title = 'Update Channels'
         for channel_id, data in (await self.settings.all_channels()).items():
             channel = ctx.guild.get_channel(channel_id)
             if not channel:
                 continue
+            role = ctx.guild.get_role(data['role_id'])
+            embed.add_field(name=f'**{data["name"]}**',
+                            value=f'> **Channel:** {channel.mention}\n'
+                                  f'> **Image URL:** {data["icon_url"] if data["icon_url"] else ":x:"}\n'
+                                  f'> **Role:** {role.mention if role else ":x:"}\n'
+                                  f'> **Footer Text:** {data["footer_text"] if data["footer_text"] else ":x:"}\n'
+                                  f'> **Footer Icon URL:** '
+                                  f'{data["footer_icon_url"] if data["footer_icon_url"] else ":x:"}',
+                            inline=False)
+        await ctx.send(embed=embed)
 
     @_update_set.command(name='icon')
     async def _update_set_icon(self, ctx: Context, channel: discord.TextChannel, url: str):
