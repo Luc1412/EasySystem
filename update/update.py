@@ -6,7 +6,7 @@ from discord.ext.commands import PartialEmojiConverter
 from redbot.core import Config
 from redbot.core.commands import commands, Context
 
-from update.selection import SelectionInterface, SelectionType, ReplacedText
+from update.selection import SelectionInterface, SelectionType, ReplacedText, NumberReaction
 
 BaseCog = getattr(commands, "Cog", object)
 
@@ -84,13 +84,17 @@ class Update(BaseCog):
                                                        '**Please enter the image url.**\n'
                                                        'For no image enter `none` for no image.')
 
-        notification_selection = image_selection.add_result('*', SelectionType.REACTION, 'Select Notification',
-                                                            'Message successfully set!\n\n'
-                                                            '**Should we notify someone?**\n'
-                                                            '\U00000031 **- Disable notifications**\n'
-                                                            '\U00000032 **- Notify role**\n'
-                                                            '\U00000033 **- Notify everyone**',
-                                                            reactions=['\U00000031', '\U00000032', '\U00000033'])
+        notification_selection = image_selection.add_result(
+            '*',
+            SelectionType.REACTION,
+            'Select Notification',
+            'Message successfully set!\n\n'
+            '**Should we notify someone?**\n'
+            ':one: **- Disable notifications**\n'
+            ':two: **- Notify role**\n'
+            ':three: **- Notify everyone**',
+            reactions=[NumberReaction.ONE.value, NumberReaction.TWO.value, NumberReaction.THREE.value]
+        )
 
         def f1(result):
             data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
@@ -126,9 +130,9 @@ class Update(BaseCog):
 
             mention = None
             mention_r = result[4] if len(update_channels) > 1 else result[3]
-            if mention_r == '\U00000032':
+            if mention_r == NumberReaction.TWO.value:
                 mention = role.mention
-            elif mention_r == '\U00000033':
+            elif mention_r == NumberReaction.THREE.value:
                 mention = '@everyone'
 
             message = await channel.send(content=mention, embed=update_message)
@@ -196,7 +200,7 @@ class Update(BaseCog):
             role = ctx.guild.get_role(data['role_id'])
             embed.add_field(name=f'**{data["name"]}**',
                             value=f'> **Channel:** {channel.mention}\n'
-                                  f'> **Emoji:** {self._get_emoji(data["emoji"])}\nf'
+                                  f'> **Emoji:** {self._get_emoji(data["emoji"])}\n'
                                   f'> **Image URL:** {data["icon_url"] if data["icon_url"] else ":x:"}\n'
                                   f'> **Role:** {role.mention if role else ":x:"}\n'
                                   f'> **Footer Text:** {data["footer_text"] if data["footer_text"] else ":x:"}\n'

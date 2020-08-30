@@ -305,6 +305,20 @@ class SelectionResultType(Enum):
     RETRY = 4
 
 
+class NumberReaction(Enum):
+    ZERO = '0\N{variation selector-16}\N{combining enclosing keycap}'
+    ONE = '1\N{variation selector-16}\N{combining enclosing keycap}'
+    TWO = '2\N{variation selector-16}\N{combining enclosing keycap}'
+    THREE = '3\N{variation selector-16}\N{combining enclosing keycap}'
+    FOUR = '4\N{variation selector-16}\N{combining enclosing keycap}'
+    FIVE = '5\N{variation selector-16}\N{combining enclosing keycap}'
+    SIX = '6\N{variation selector-16}\N{combining enclosing keycap}'
+    SEVEN = '7\N{variation selector-16}\N{combining enclosing keycap}'
+    EIGHT = '8\N{variation selector-16}\N{combining enclosing keycap}'
+    NINE = '9\N{variation selector-16}\N{combining enclosing keycap}'
+    TEN = '\N{keycap ten}'
+
+
 class SelectionInterface:
 
     def __init__(self, ctx, **kwargs):
