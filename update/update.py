@@ -99,7 +99,6 @@ class Update(BaseCog):
             data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                 update_channels[str(result[0])]
 
-
         submit_selection = notification_selection.add_result(
             '*',
             SelectionType.CONFIRM_SELECTION,
@@ -117,7 +116,7 @@ class Update(BaseCog):
 
                 update_message = discord.Embed()
                 update_message.title = result[1] if len(update_channels) > 1 else result[0]
-                update_message.colour = await self.bot.get_embed_colour(ctx.message)
+                update_message.colour = await self.bot.get_embed_colour(context.message)
                 update_message.description = result[2] if len(update_channels) > 1 else result[1]
                 if (result[3] if len(update_channels) > 1 else result[2]).lower() != 'none':
                     update_message.set_image(url=result[3] if len(update_channels) > 1 else result[2])
