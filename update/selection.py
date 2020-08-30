@@ -74,10 +74,12 @@ class SelectionBase:
         thumbnail_url = self.thumbnail.get(self.interface.result()) if type(self.thumbnail) is ReplacedText \
             else self.thumbnail
         if self.interface.check_url(thumbnail_url):
+            print('thumbnail', thumbnail_url)
             msg.set_thumbnail(url=thumbnail_url)
 
         image_url = self.image.get(self.interface.result()) if type(self.image) is ReplacedText else self.image
         if self.interface.check_url(image_url):
+            print('image', image_url)
             msg.set_image(url=image_url)
 
         return msg
@@ -272,7 +274,7 @@ class SelectionFail(SelectionBase):
         return SelectionResult(SelectionResultType.RETRY)
 
     def _check(self, reaction, user):
-        return user is self.interface.member and reaction.emoji == self.interface.retry_emoji
+        return user.id is self.interface.member.id and reaction.emoji == self.interface.retry_emoji
 
 
 class SelectionResult:
