@@ -54,7 +54,7 @@ class Update(BaseCog):
             emoji = self._get_emoji(emoji)
             if not emoji:
                 continue
-            update_channels[emoji] = data
+            update_channels[emoji] = (cid, data)
 
         if len(update_channels) < 1:
             embed = discord.Embed(color=discord.Colour.dark_red())
@@ -96,17 +96,17 @@ class Update(BaseCog):
         )
 
         def f1(result):
-            data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+            cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                 update_channels[str(result[0])]
             return data_['icon_url'] if data_['icon_url'] else discord.embeds.EmptyEmbed
 
         def f2(result):
-            data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+            cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                 update_channels[str(result[0])]
-            return data_['footer_text']
+            return data_['footer_text'] if data_['footer_text'] else discord.embeds.EmptyEmbed
 
         def f3(result):
-            data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+            cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                 update_channels[str(result[0])]
             return data_['footer_icon_url'] if data_['footer_icon_url'] else discord.embeds.EmptyEmbed
 
@@ -124,7 +124,7 @@ class Update(BaseCog):
 
         async def a(context, result):
             try:
-                data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+                cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                     update_channels[str(result[0])]
 
                 update_message = discord.Embed()
@@ -136,7 +136,7 @@ class Update(BaseCog):
                 if data['icon_url']:
                     update_message.set_thumbnail(url=data['icon_url'])
 
-                channel = context.bot.get_channel(data_['channel_id'])
+                channel = context.bot.get_channel(cid_)
 
                 role = context.guild.get_role(data['role_id'])
 
@@ -211,7 +211,7 @@ class Update(BaseCog):
         """List all update channels"""
         embed = discord.Embed(color=discord.Colour.dark_magenta())
         embed.title = 'Update Channels'
-        for channel_id, data in (await self.settings.all_channels()).items():
+        for channel_id, (data in (await self.settings.all_channels()).items():
             channel = ctx.guild.get_channel(channel_id)
             if not channel:
                 continue
