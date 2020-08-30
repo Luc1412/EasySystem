@@ -103,7 +103,7 @@ class Update(BaseCog):
         def f2(result):
             cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                 update_channels[str(result[0])]
-            return data_['footer_text'] if data_['footer_text'] else discord.embeds.EmptyEmbed
+            return data_['footer_text'] if data_['footer_text'] else None
 
         def f3(result):
             cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
@@ -147,7 +147,8 @@ class Update(BaseCog):
                 elif mention_r == NumberReaction.THREE.value:
                     mention = '@everyone'
 
-                message = await channel.send(content=mention, embed=update_message)
+                message = await channel.send(content=mention, embed=update_message,
+                                             allowed_mentions=discord.AllowedMentions(everyone=True, roles=True))
                 if channel.is_news():
                     with suppress(discord.Forbidden):
                         await message.publish()
