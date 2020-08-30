@@ -1,3 +1,4 @@
+import traceback
 from contextlib import suppress
 from typing import Union
 
@@ -151,7 +152,7 @@ class Update(BaseCog):
                     with suppress(discord.Forbidden):
                         await message.publish()
             except Exception as e:
-                print(e)
+                print(traceback.format_exc())
 
         submit_selection.set_action(a)
 
