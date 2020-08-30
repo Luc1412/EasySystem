@@ -151,7 +151,7 @@ class Update(BaseCog):
                 if channel.is_news():
                     with suppress(discord.Forbidden):
                         await message.publish()
-            except Exception as e:
+            except:
                 print(traceback.format_exc())
 
         submit_selection.set_action(a)
