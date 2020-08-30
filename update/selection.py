@@ -130,13 +130,12 @@ class ReactionSelection(SelectionBase):
     def _check(self, reaction, user):
         correct_reaction = False
         for reaction_ in self.reactions:
-            print(reaction_, reaction)
-            print(reaction_ != reaction.emoji, str(reaction_) != str(reaction.emoji))
-            if str(reaction_) != str(reaction.emoji):
+            if reaction_ != reaction.emoji:
                 continue
             correct_reaction = True
             break
-        return user is self.interface.member and (correct_reaction or str(reaction.emoji) in self.interface_reactions)
+
+        return user.id is self.interface.member.id and (correct_reaction or reaction.emoji in self.interface_reactions)
 
     async def _add_reactions(self):
         for reaction in self.interface_reactions:
@@ -169,7 +168,7 @@ class MultiReactionSelection(ReactionSelection):
                 continue
             users = await reaction.users().flatten()
             for user in users:
-                if user is not self.interface.member:
+                if user.id is not self.interface.member.id:
                     continue
                 selections.append(reaction.emoji)
                 break
@@ -184,8 +183,8 @@ class MultiReactionSelection(ReactionSelection):
         return SelectionResult(SelectionResultType.SUCCESS, selections)
 
     def _check(self, reaction, user):
-        return user is self.interface.member and str(reaction.emoji) in (self.interface_reactions +
-                                                                         [self.interface.success_emoji])
+        return user.id is self.interface.member.id and str(reaction.emoji) in (self.interface_reactions +
+                                                                               [self.interface.success_emoji])
 
     async def _add_reactions(self):
         for reaction in self.interface_reactions:
@@ -230,10 +229,10 @@ class TextSelection(SelectionBase):
         return SelectionResult(SelectionResultType.SUCCESS, data)
 
     def _check(self, user_input):
-        return user_input.author is self.interface.member
+        return user_input.author.id is self.interface.member.id
 
     def _check_cancel(self, reaction, user):
-        return user is self.interface.member and str(reaction.emoji) in self.interface_reactions
+        return user.id is self.interface.member.id and str(reaction.emoji) in self.interface_reactions
 
     async def _add_reactions(self):
         for reaction in self.interface_reactions:
