@@ -105,7 +105,7 @@ class Update(BaseCog):
             SelectionType.CONFIRM_SELECTION,
             ReplacedText('{}', lambda x: x[1] if len(update_channels) > 1 else x[0]),
             ReplacedText('{}', lambda x: x[2] if len(update_channels) > 1 else x[1]),
-            color=self.bot.get_embed_colour(ctx.message),
+            color=await self.bot.get_embed_colour(ctx.message),
             thumbnail=ReplacedText('{}', f1),
             image=ReplacedText('{}', lambda x: x[3] if len(update_channels) > 1 else x[2])
         )
@@ -116,7 +116,7 @@ class Update(BaseCog):
 
             update_message = discord.Embed()
             update_message.title = result[1] if len(update_channels) > 1 else result[0]
-            update_message.colour = self.bot.get_embed_colour(ctx.message)
+            update_message.colour = await self.bot.get_embed_colour(ctx.message)
             update_message.description = result[2] if len(update_channels) > 1 else result[1]
             if (result[3] if len(update_channels) > 1 else result[2]).lower() != 'none':
                 update_message.set_image(url=result[3] if len(update_channels) > 1 else result[2])
