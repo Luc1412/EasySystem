@@ -111,33 +111,36 @@ class Update(BaseCog):
         )
 
         async def a(context, result):
-            data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
-                update_channels[str(result[0])]
+            try:
+                data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+                    update_channels[str(result[0])]
 
-            update_message = discord.Embed()
-            update_message.title = result[1] if len(update_channels) > 1 else result[0]
-            update_message.colour = await self.bot.get_embed_colour(ctx.message)
-            update_message.description = result[2] if len(update_channels) > 1 else result[1]
-            if (result[3] if len(update_channels) > 1 else result[2]).lower() != 'none':
-                update_message.set_image(url=result[3] if len(update_channels) > 1 else result[2])
-            if data['icon_url']:
-                update_message.set_thumbnail(url=data['icon_url'])
+                update_message = discord.Embed()
+                update_message.title = result[1] if len(update_channels) > 1 else result[0]
+                update_message.colour = await self.bot.get_embed_colour(ctx.message)
+                update_message.description = result[2] if len(update_channels) > 1 else result[1]
+                if (result[3] if len(update_channels) > 1 else result[2]).lower() != 'none':
+                    update_message.set_image(url=result[3] if len(update_channels) > 1 else result[2])
+                if data['icon_url']:
+                    update_message.set_thumbnail(url=data['icon_url'])
 
-            channel = context.bot.get_channel(data_['channel_id'])
+                channel = context.bot.get_channel(data_['channel_id'])
 
-            role = context.guild.get_role(data['role_id'])
+                role = context.guild.get_role(data['role_id'])
 
-            mention = None
-            mention_r = result[4] if len(update_channels) > 1 else result[3]
-            if mention_r == NumberReaction.TWO.value:
-                mention = role.mention
-            elif mention_r == NumberReaction.THREE.value:
-                mention = '@everyone'
+                mention = None
+                mention_r = result[4] if len(update_channels) > 1 else result[3]
+                if mention_r == NumberReaction.TWO.value:
+                    mention = role.mention
+                elif mention_r == NumberReaction.THREE.value:
+                    mention = '@everyone'
 
-            message = await channel.send(content=mention, embed=update_message)
-            if channel.is_news():
-                with suppress(discord.Forbidden):
-                    await message.publish()
+                message = await channel.send(content=mention, embed=update_message)
+                if channel.is_news():
+                    with suppress(discord.Forbidden):
+                        await message.publish()
+            except Exception as e:
+                print(e)
 
         submit_selection.set_action(a)
 
