@@ -47,6 +47,7 @@ class SelectionBase:
         self.load_action = loading
 
     def build_message(self):
+        author = self.author.get(self.interface.result()) if type(self.author) is ReplacedText else self.author
         header_icon = self.header_icon.get(self.interface.result()) if type(
             self.header_icon) is ReplacedText else self.header_icon
         if not isinstance(header_icon, str) or not self.interface.check_url(header_icon):
@@ -55,16 +56,16 @@ class SelectionBase:
         footer_icon = self.footer_icon.get(self.interface.result()) if type(self.footer_icon) is ReplacedText else self.footer_icon
         if not isinstance(footer_icon, str) or not self.interface.check_url(footer_icon):
             footer_icon = discord.embeds.EmptyEmbed
-
+        footer = self.footer.get(self.interface.result()) if type(self.footer) is ReplacedText else self.footer
 
         msg = discord.Embed()
         msg.colour = self.color
 
         msg.title = self.title.get(self.interface.result()) if type(self.title) is ReplacedText else self.title
 
-        if self.author:
+        if author:
             msg.set_author(
-                name=self.author.get(self.interface.result()) if type(self.author) is ReplacedText else self.author,
+                name=author,
                 url=self.header_url,
                 icon_url=header_icon
             )
@@ -77,10 +78,8 @@ class SelectionBase:
                 name=field_name.get(self.interface.result()) if type(field_name) is ReplacedText else field_name,
                 value=field_value.get(self.interface.result()) if type(field_value) is ReplacedText else field_value,
                 inline=field.get('inline', True))
-        msg.set_footer(
-            text=self.footer.get(self.interface.result()) if type(self.footer) is ReplacedText else self.footer,
-            icon_url=footer_icon
-        )
+        if footer:
+            msg.set_footer(text=footer, icon_url=footer_icon)
 
         thumbnail_url = self.thumbnail.get(self.interface.result()) if type(self.thumbnail) is ReplacedText \
             else self.thumbnail
