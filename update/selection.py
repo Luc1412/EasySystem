@@ -127,6 +127,8 @@ class ReactionSelection(SelectionBase):
     def _check(self, reaction, user):
         correct_reaction = False
         for reaction_ in self.reactions:
+            print(reaction_)
+            print(self.reactions)
             if str(reaction_) != str(reaction.emoji):
                 continue
             correct_reaction = True
