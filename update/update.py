@@ -97,7 +97,7 @@ class Update(BaseCog):
         def f1(result):
             data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                 update_channels[str(result[0])]
-            return data_['icon_url'] if data_['icon_url'] else discord.Embed.Empty
+            return data_['icon_url'] if data_['icon_url'] else discord.embeds.EmptyEmbed
 
         def f2(result):
             data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
@@ -107,7 +107,7 @@ class Update(BaseCog):
         def f3(result):
             data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                 update_channels[str(result[0])]
-            return data_['footer_icon_url'] if data_['footer_icon_url'] else discord.Embed.Empty
+            return data_['footer_icon_url'] if data_['footer_icon_url'] else discord.embeds.EmptyEmbed
 
         submit_selection = notification_selection.add_result(
             '*',
