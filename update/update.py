@@ -192,6 +192,7 @@ class Update(BaseCog):
             role = ctx.guild.get_role(data['role_id'])
             embed.add_field(name=f'**{data["name"]}**',
                             value=f'> **Channel:** {channel.mention}\n'
+                                  f'> **Emoji:** {data["emoji"]}\n'
                                   f'> **Image URL:** {data["icon_url"] if data["icon_url"] else ":x:"}\n'
                                   f'> **Role:** {role.mention if role else ":x:"}\n'
                                   f'> **Footer Text:** {data["footer_text"] if data["footer_text"] else ":x:"}\n'
