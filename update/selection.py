@@ -47,6 +47,16 @@ class SelectionBase:
         self.load_action = loading
 
     def build_message(self):
+        header_icon = self.header_icon.get(self.interface.result()) if type(
+            self.header_icon) is ReplacedText else self.header_icon
+        if not isinstance(header_icon, str) or not self.interface._check_url(header_icon):
+            header_icon = discord.embeds.EmptyEmbed
+
+        footer_icon = self.footer_icon.get(self.interface.result()) if type(self.footer_icon) is ReplacedText else self.footer_icon
+        if not isinstance(footer_icon, str) or not self.interface._check_url(footer_icon):
+            footer_icon = discord.embeds.EmptyEmbed
+
+
         msg = discord.Embed()
         msg.colour = self.color
 
@@ -56,7 +66,7 @@ class SelectionBase:
             msg.set_author(
                 name=self.author.get(self.interface.result()) if type(self.author) is ReplacedText else self.author,
                 url=self.header_url,
-                icon_url=self.header_icon
+                icon_url=header_icon
             )
 
         msg.description = self.text.get(self.interface.result()) if type(self.text) is ReplacedText else self.text
@@ -69,7 +79,7 @@ class SelectionBase:
                 inline=field.get('inline', True))
         msg.set_footer(
             text=self.footer.get(self.interface.result()) if type(self.footer) is ReplacedText else self.footer,
-            icon_url=self.footer_icon
+            icon_url=footer_icon
         )
 
         thumbnail_url = self.thumbnail.get(self.interface.result()) if type(self.thumbnail) is ReplacedText \
