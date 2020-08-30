@@ -49,11 +49,11 @@ class SelectionBase:
     def build_message(self):
         header_icon = self.header_icon.get(self.interface.result()) if type(
             self.header_icon) is ReplacedText else self.header_icon
-        if not isinstance(header_icon, str) or not self.interface._check_url(header_icon):
+        if not isinstance(header_icon, str) or not self.interface.check_url(header_icon):
             header_icon = discord.embeds.EmptyEmbed
 
         footer_icon = self.footer_icon.get(self.interface.result()) if type(self.footer_icon) is ReplacedText else self.footer_icon
-        if not isinstance(footer_icon, str) or not self.interface._check_url(footer_icon):
+        if not isinstance(footer_icon, str) or not self.interface.check_url(footer_icon):
             footer_icon = discord.embeds.EmptyEmbed
 
 
