@@ -211,7 +211,7 @@ class Update(BaseCog):
         """List all update channels"""
         embed = discord.Embed(color=discord.Colour.dark_magenta())
         embed.title = 'Update Channels'
-        for channel_id, (data in (await self.settings.all_channels()).items():
+        for channel_id, data in (await self.settings.all_channels()).items():
             channel = ctx.guild.get_channel(channel_id)
             if not channel:
                 continue
