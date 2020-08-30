@@ -85,8 +85,7 @@ class Update(BaseCog):
                                                        'For no image enter `none` for no image.')
 
         notification_selection = image_selection.add_result(
-            '*',
-            SelectionType.REACTION,
+            '*', SelectionType.REACTION,
             'Select Notification',
             'Message successfully set!\n\n'
             '**Should we notify someone?**\n'

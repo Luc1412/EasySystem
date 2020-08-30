@@ -62,9 +62,10 @@ class SelectionBase:
         for field in self.fields:
             field_name = field.get('name', 'None')
             field_value = field.get('value', 'None')
-            msg.add_field(name=field_name.get(self.interface.result()) if type(field_name) is ReplacedText else field_name,
-                          value=field_value.get(self.interface.result()) if type(field_value) is ReplacedText else field_value,
-                          inline=field.get('inline', True))
+            msg.add_field(
+                name=field_name.get(self.interface.result()) if type(field_name) is ReplacedText else field_name,
+                value=field_value.get(self.interface.result()) if type(field_value) is ReplacedText else field_value,
+                inline=field.get('inline', True))
         msg.set_footer(
             text=self.footer.get(self.interface.result()) if type(self.footer) is ReplacedText else self.footer,
             icon_url=self.footer_icon
@@ -126,11 +127,11 @@ class ReactionSelection(SelectionBase):
     def _check(self, reaction, user):
         correct_reaction = False
         for reaction_ in self.reactions:
-            if reaction_ != reaction.emoji:
+            if str(reaction_) != str(reaction.emoji):
                 continue
             correct_reaction = True
             break
-        return user is self.interface.member and (correct_reaction or reaction.emoji in self.interface_reactions)
+        return user is self.interface.member and (correct_reaction or str(reaction.emoji) in self.interface_reactions)
 
     async def _add_reactions(self):
         for reaction in self.interface_reactions:
@@ -178,8 +179,8 @@ class MultiReactionSelection(ReactionSelection):
         return SelectionResult(SelectionResultType.SUCCESS, selections)
 
     def _check(self, reaction, user):
-        return user is self.interface.member and reaction.emoji in (self.interface_reactions +
-                                                                    [self.interface.success_emoji])
+        return user is self.interface.member and str(reaction.emoji) in (self.interface_reactions +
+                                                                         [self.interface.success_emoji])
 
     async def _add_reactions(self):
         for reaction in self.interface_reactions:
@@ -227,7 +228,7 @@ class TextSelection(SelectionBase):
         return user_input.author is self.interface.member
 
     def _check_cancel(self, reaction, user):
-        return user is self.interface.member and reaction.emoji in self.interface_reactions
+        return user is self.interface.member and str(reaction.emoji) in self.interface_reactions
 
     async def _add_reactions(self):
         for reaction in self.interface_reactions:
@@ -346,7 +347,7 @@ class SelectionInterface:
         self.abort_title = kwargs.get('abort_title', 'Selection Canceled')
         self.abort_text = kwargs.get('abort_text', 'The selection has been successfully canceled!')
         self.timeout_title = kwargs.get('timeout_title', 'Selection Canceled')
-        self.timeout_text = kwargs.get('timeout_text', 'The selection has been canceled after {0:.1f} minutes!')\
+        self.timeout_text = kwargs.get('timeout_text', 'The selection has been canceled after {0:.1f} minutes!') \
             .format(self.timeout / 60)
 
         self.cancel_hint = kwargs.get('cancel_hint', '**Cancel**')
