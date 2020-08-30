@@ -24,6 +24,7 @@ class SelectionBase:
         self.header_url = kwargs.get('header_url', discord.embeds.EmptyEmbed)
         self.header_icon = kwargs.get('header_icon', self.interface.header_icon)
         self.footer_icon = kwargs.get('footer_icon', self.interface.footer_icon)
+        print('footer icon', self.footer_icon)
         self.color = kwargs.get('color', self.interface.selection_color)
         self.fields = kwargs.get('fields', [])
         self.thumbnail = kwargs.get('thumbnail', '')
