@@ -114,12 +114,15 @@ class ReactionSelection(SelectionBase):
             await self.interface.message.clear_reactions()
             return SelectionResult(SelectionResultType.FAIL, 0)
 
+        print(1)
         reaction_task.cancel()
         await self.interface.message.clear_reactions()
         emoji = reaction.emoji
         if emoji == self.interface.fail_emoji:
+            print(2)
             return SelectionResult(SelectionResultType.FAIL, 1)
         if self is not self.interface.first and emoji == self.interface.back_emoji:
+            print(3)
             return SelectionResult(SelectionResultType.BACK)
         self.next = self.result_events.get(emoji, self.result_events.get('*', None))
         return SelectionResult(SelectionResultType.SUCCESS, emoji)
@@ -276,8 +279,8 @@ class SelectionFail(SelectionBase):
 
 class SelectionResult:
 
-    def __init__(self, type, value=None):
-        self.type = type
+    def __init__(self, type_, value=None):
+        self.type = type_
         self.value = value
 
 

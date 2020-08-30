@@ -2,7 +2,6 @@ from contextlib import suppress
 from typing import Union
 
 import discord
-from discord.ext.commands import PartialEmojiConverter
 from redbot.core import Config
 from redbot.core.commands import commands, Context
 
@@ -98,6 +97,17 @@ class Update(BaseCog):
         def f1(result):
             data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
                 update_channels[str(result[0])]
+            return data_['icon_url']
+
+        def f2(result):
+            data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+                update_channels[str(result[0])]
+            return data_['footer_text']
+
+        def f3(result):
+            data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
+                update_channels[str(result[0])]
+            return data_['footer_icon_url']
 
         submit_selection = notification_selection.add_result(
             '*',
@@ -106,7 +116,9 @@ class Update(BaseCog):
             ReplacedText('{}', lambda x: x[2] if len(update_channels) > 1 else x[1]),
             color=await self.bot.get_embed_colour(ctx.message),
             thumbnail=ReplacedText('{}', f1),
-            image=ReplacedText('{}', lambda x: x[3] if len(update_channels) > 1 else x[2])
+            image=ReplacedText('{}', lambda x: x[3] if len(update_channels) > 1 else x[2]),
+            footer_text=ReplacedText('{}', f2),
+            footer_icon=ReplacedText('{}', f3),
         )
 
         async def a(context, result):
@@ -155,7 +167,11 @@ class Update(BaseCog):
 
     @_update_set.command(name='add')
     # TODO: Permissions Check
-    async def _update_set_add(self, ctx: Context, channel: discord.TextChannel, emoji: Union[discord.Emoji, str], *, name: str):
+    async def _update_set_add(self,
+                              ctx: Context,
+                              channel: discord.TextChannel,
+                              emoji: Union[discord.Emoji, str],
+                              *, name: str):
         """Add a update channel"""
         existing_name = await self.settings.channel(channel).name()
         if existing_name:
