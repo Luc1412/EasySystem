@@ -33,6 +33,14 @@ class Update(BaseCog):
         self.settings.register_guild(**default_guild_settings)
         self.settings.register_channel(**default_channel_settings)
 
+    def _get_emoji(self, emoji):
+        try:
+            emoji = int(emoji)
+            emoji = self.bot.get_emoji(emoji)
+            return emoji
+        except ValueError:
+            return emoji
+
     @commands.command(name='update')
     async def _update(self, ctx: Context):
         """Sends a update message to the selected channel with the selected parameters"""
@@ -43,13 +51,9 @@ class Update(BaseCog):
             if not ctx.guild.get_channel(cid):
                 continue
             emoji = data['emoji']
-            try:
-                emoji = int(emoji)
-                emoji = self.bot.get_emoji(emoji)
-                if not emoji:
-                    continue
-            except ValueError:
-                pass
+            emoji = self._get_emoji(emoji)
+            if not emoji:
+                continue
             update_channels[emoji] = data
 
         if len(update_channels) < 1:
@@ -192,7 +196,7 @@ class Update(BaseCog):
             role = ctx.guild.get_role(data['role_id'])
             embed.add_field(name=f'**{data["name"]}**',
                             value=f'> **Channel:** {channel.mention}\n'
-                                  f'> **Emoji:** {data["emoji"]}\n'
+                                  f'> **Emoji:** {self._get_emoji(data["emoji"])}\nf'
                                   f'> **Image URL:** {data["icon_url"] if data["icon_url"] else ":x:"}\n'
                                   f'> **Role:** {role.mention if role else ":x:"}\n'
                                   f'> **Footer Text:** {data["footer_text"] if data["footer_text"] else ":x:"}\n'
