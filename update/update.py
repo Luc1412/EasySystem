@@ -146,7 +146,7 @@ class Update(BaseCog):
 
     @_update_set.command(name='add')
     # TODO: Permissions Check
-    async def _update_set_add(self, ctx: Context, channel: discord.TextChannel, *, name: str):
+    async def _update_set_add(self, ctx: Context, channel: discord.TextChannel, emoji: Union[discord.Emoji, str], *, name: str):
         """Add a update channel"""
         existing_name = await self.settings.channel(channel).name()
         if existing_name:
@@ -156,10 +156,12 @@ class Update(BaseCog):
                                 f'> **Name:** {existing_name}'
             return await ctx.send(embed=embed)
         await self.settings.channel(channel).name.set(name)
+        await self.settings.channel(channel).emoji.set(emoji.id if isinstance(emoji, discord.Emoji) else emoji)
         embed = discord.Embed(colour=discord.Colour.green())
         embed.description = f'The channel has been successfully added as a update channel.\n' \
                             f'> **Channel:** {channel.mention}\n' \
-                            f'> **Name:** {name}'
+                            f'> **Name:** {name}\n' \
+                            f'> **Emoji:** {emoji}'
         return await ctx.send(embed=embed)
 
     @_update_set.command(name='remove')
