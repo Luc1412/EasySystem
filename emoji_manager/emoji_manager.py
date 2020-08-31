@@ -122,8 +122,13 @@ class EmojiManager(BaseCog):
         pass
 
     @_emojiset.command(name='add')
-    async def _emojiset_add(self, ctx: Context, guild: discord.Guild):
+    async def _emojiset_add(self, ctx: Context, guild_id: int):
         """"""
+        guild = ctx.bot.get_guild(guild_id)
+        if not guild:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = 'The bot isn\'t on the guild.'
+            return await ctx.send(embed=embed)
         guild_ids = await self.settings.emoji_server_ids()
         if guild.id in guild_ids:
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -141,10 +146,15 @@ class EmojiManager(BaseCog):
 
 
     @_emojiset.command(name='remove')
-    async def _emojiset_remove(self, ctx: Context, guild: discord.Guild):
+    async def _emojiset_remove(self, ctx: Context, guild_id: int):
         """"""
+        guild = ctx.bot.get_guild(guild_id)
+        if not guild:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = 'The bot isn\'t on the guild.'
+            return await ctx.send(embed=embed)
         guild_ids = await self.settings.emoji_server_ids()
-        if guild.id not in guild_ids:
+        if guild_id not in guild_ids:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The guild is no emoji server.'
             return await ctx.send(embed=embed)
