@@ -97,17 +97,17 @@ class Update(BaseCog):
 
         def f1(result):
             cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
-                update_channels[str(result[0])]
+                update_channels[result[0]]
             return data_['icon_url'] if data_['icon_url'] else discord.embeds.EmptyEmbed
 
         def f2(result):
             cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
-                update_channels[str(result[0])]
+                update_channels[result[0]]
             return data_['footer_text'] if data_['footer_text'] else None
 
         def f3(result):
             cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
-                update_channels[str(result[0])]
+                update_channels[result[0]]
             return data_['footer_icon_url'] if data_['footer_icon_url'] else discord.embeds.EmptyEmbed
 
         submit_selection = notification_selection.add_result(
