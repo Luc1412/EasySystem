@@ -1,5 +1,5 @@
 import discord
-from redbot.core import Config
+from redbot.core import Config, checks
 from redbot.core.commands import commands, Context
 from redbot.core.utils.chat_formatting import pagify
 
@@ -35,13 +35,14 @@ class EmojiManager(BaseCog):
                 names.append(emoji.name.lower())
 
     @commands.group(name='emoji')
+    @checks.is_owner()
     async def _emoji(self, ctx: Context):
-        """"""
+        """Manage the emoji on all linked guilds."""
         pass
 
     @_emoji.command(name='add')
     async def _emoji_add(self, ctx: Context, name: str):
-        """"""
+        """Add a emoji to one emoji server."""
         if len(ctx.message.attachments) != 1:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'You need to provide a attachment with the emoji image.'
@@ -83,7 +84,7 @@ class EmojiManager(BaseCog):
 
     @_emoji.command(name='remove')
     async def _emoji_remove(self, ctx: Context, id_: int):
-        """"""
+        """Remove a emoji to one emoji server."""
         emoji = ctx.bot.get_emoji(id_)
         if not emoji:
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -105,7 +106,7 @@ class EmojiManager(BaseCog):
 
     @_emoji.command(name='list')
     async def _emoji_list(self, ctx: Context):
-        """"""
+        """List all emojis on all emoji servers."""
         embed = discord.Embed(colour=discord.Color.dark_magenta())
         embed.title = 'Emojis'
         for guild_id in await self.settings.emoji_server_ids():
@@ -117,13 +118,14 @@ class EmojiManager(BaseCog):
         await ctx.send(embed=embed)
 
     @commands.group(name='emojiset')
+    @checks.is_owner()
     async def _emojiset(self, ctx: Context):
-        """"""
+        """Setup the cog."""
         pass
 
     @_emojiset.command(name='add')
     async def _emojiset_add(self, ctx: Context, guild_id: int):
-        """"""
+        """Add a emoji guild."""
         guild = ctx.bot.get_guild(guild_id)
         if not guild:
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -147,7 +149,7 @@ class EmojiManager(BaseCog):
 
     @_emojiset.command(name='remove')
     async def _emojiset_remove(self, ctx: Context, guild_id: int):
-        """"""
+        """Remove a emoji guild."""
         guild = ctx.bot.get_guild(guild_id)
         if not guild:
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -170,7 +172,7 @@ class EmojiManager(BaseCog):
 
     @_emojiset.command(name='list')
     async def _emojiset_list(self, ctx: Context):
-        """"""
+        """List all emoji guilds."""
         guild_ids = await self.settings.emoji_server_ids()
         guilds = [ctx.bot.get_guild(gid) for gid in guild_ids]
         embed = discord.Embed(colour=discord.Color.dark_magenta())
