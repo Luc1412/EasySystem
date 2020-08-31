@@ -3,7 +3,7 @@ from contextlib import suppress
 from typing import Union
 
 import discord
-from redbot.core import Config
+from redbot.core import Config, checks
 from redbot.core.commands import commands, Context
 
 from update.selection import SelectionInterface, SelectionType, ReplacedText, NumberReaction
@@ -19,9 +19,6 @@ class Update(BaseCog):
     def __init__(self, bot):
         self.bot = bot
         self.settings = Config.get_conf(self, 200912392)
-        default_guild_settings = {
-
-        }
         default_channel_settings = {
             "name": None,
             "emoji": None,
@@ -30,7 +27,6 @@ class Update(BaseCog):
             "footer_icon_url": None,
             "footer_text": None
         }
-        self.settings.register_guild(**default_guild_settings)
         self.settings.register_channel(**default_channel_settings)
 
     def _get_emoji(self, emoji):
@@ -41,7 +37,8 @@ class Update(BaseCog):
         except ValueError:
             return emoji
 
-    @commands.command(name='update')
+    @commands.group(name='update')
+    @checks.admin_or_permissions(manage_guild=True)
     async def _update(self, ctx: Context):
         """Sends a update message to the selected channel with the selected parameters"""
         selection = SelectionInterface(ctx, timeout=600)
@@ -165,13 +162,93 @@ class Update(BaseCog):
 
         await selection.start()
 
+    @commands.command(name='edit')
+    @checks.admin_or_permissions(manage_guild=True)
+    async def _update_edit(self, ctx: Context, message: discord.Message):
+        """Sends a update message to the selected channel with the selected parameters"""
+        existing_name = await self.settings.channel(message.channel).name()
+        if not existing_name:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = f'The channel where the message is located is no update channel.\n' \
+                                f'> **Channel:** {message.channel.mention}\n'
+            return await ctx.send(embed=embed)
+        if message.author.id != ctx.bot.user.id or len(message.embeds) != 1:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = f'The message is not update message.\n' \
+                                f'> **Channel:** {message.channel.mention}\n'
+            return await ctx.send(embed=embed)
+
+        emoji = self._get_emoji(await self.settings.channel(message.channel).emoji())
+        icon_url = await self.settings.channel(message.channel).icon_url()
+        role_id = await self.settings.channel(message.channel).role_id()
+        footer_icon_url = await self.settings.channel(message.channel).footer_icon_url()
+        footer_text = await self.settings.channel(message.channel).footer_text()
+
+        selection = SelectionInterface(ctx, timeout=600)
+
+        title_selection = selection.set_base_selection(SelectionType.TEXT, 'Select new Title',
+                                                       '**Please enter the new update title.**')
+
+        message_selection = title_selection.add_result('*', SelectionType.TEXT, 'Select new Message',
+                                                       'Title successfully set!\n\n'
+                                                       '**Please enter the new update message.**')
+
+        image_selection = message_selection.add_result('*', SelectionType.TEXT, 'Select Image',
+                                                       'Message successfully set!\n\n'
+                                                       '**Please enter the image url.**\n'
+                                                       'For no image enter `none` for no image.')
+
+        def f1(result):
+            return icon_url if icon_url else discord.embeds.EmptyEmbed
+
+        def f2(result):
+            return footer_text if footer_text else None
+
+        def f3(result):
+            return footer_icon_url if footer_icon_url else discord.embeds.EmptyEmbed
+
+        submit_selection = image_selection.add_result(
+            '*',
+            SelectionType.CONFIRM_SELECTION,
+            ReplacedText('{}', lambda x: x[0]),
+            ReplacedText('{}', lambda x: x[1]),
+            color=await self.bot.get_embed_colour(ctx.message),
+            thumbnail=ReplacedText('{}', f1),
+            image=ReplacedText('{}', lambda x: x[2]),
+            footer_text=ReplacedText('{}', f2),
+            footer_icon=ReplacedText('{}', f3),
+        )
+
+        async def a(context, result):
+            try:
+
+                update_message = message.embeds[0]
+                update_message.title = result[0]
+                update_message.colour = await self.bot.get_embed_colour(context.message)
+                update_message.description = result[1]
+                if (result[2]).lower() != 'none':
+                    update_message.set_image(url=result[2])
+                if icon_url:
+                    update_message.set_thumbnail(url=icon_url)
+
+                await message.edit(content=message.content, embed=update_message)
+            except:
+                print(traceback.format_exc())
+
+        submit_selection.set_action(a)
+
+        submit_selection.add_result('*', SelectionType.SUCCESS, 'Update edit successfully',
+                                    ':white_check_mark: Update successfully edited!')
+
+        await selection.start()
+
     @commands.group(name='updateset')
+    @checks.admin_or_permissions(manage_guild=True)
     async def _update_set(self, ctx: Context):
         """Update configuration options."""
         pass
 
     @_update_set.command(name='add')
-    # TODO: Permissions Check
     async def _update_set_add(self,
                               ctx: Context,
                               channel: discord.TextChannel,

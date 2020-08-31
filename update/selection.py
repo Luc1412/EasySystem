@@ -24,7 +24,6 @@ class SelectionBase:
         self.header_url = kwargs.get('header_url', discord.embeds.EmptyEmbed)
         self.header_icon = kwargs.get('header_icon', self.interface.header_icon)
         self.footer_icon = kwargs.get('footer_icon', self.interface.footer_icon)
-        print('footer icon', self.footer_icon)
         self.color = kwargs.get('color', self.interface.selection_color)
         self.fields = kwargs.get('fields', [])
         self.thumbnail = kwargs.get('thumbnail', '')
@@ -84,12 +83,10 @@ class SelectionBase:
         thumbnail_url = self.thumbnail.get(self.interface.result()) if type(self.thumbnail) is ReplacedText \
             else self.thumbnail
         if self.interface.check_url(thumbnail_url):
-            print('thumbnail', thumbnail_url)
             msg.set_thumbnail(url=thumbnail_url)
 
         image_url = self.image.get(self.interface.result()) if type(self.image) is ReplacedText else self.image
         if self.interface.check_url(image_url):
-            print('image', image_url)
             msg.set_image(url=image_url)
 
         return msg
@@ -126,7 +123,6 @@ class ReactionSelection(SelectionBase):
             await self.interface.message.clear_reactions()
             return SelectionResult(SelectionResultType.FAIL, 0)
 
-        print(1)
         reaction_task.cancel()
         await self.interface.message.clear_reactions()
         emoji = reaction.emoji
