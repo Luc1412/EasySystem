@@ -37,7 +37,7 @@ class Update(BaseCog):
         except ValueError:
             return emoji
 
-    @commands.group(name='update')
+    @commands.group(name='update', invoke_without_command=True)
     @checks.admin_or_permissions(manage_guild=True)
     async def _update(self, ctx: Context):
         """Sends a update message to the selected channel with the selected parameters"""
