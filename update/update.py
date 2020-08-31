@@ -162,7 +162,7 @@ class Update(BaseCog):
 
         await selection.start()
 
-    @commands.command(name='edit')
+    @_update.command(name='edit')
     @checks.admin_or_permissions(manage_guild=True)
     async def _update_edit(self, ctx: Context, message: discord.Message):
         """Sends a update message to the selected channel with the selected parameters"""
@@ -178,9 +178,7 @@ class Update(BaseCog):
                                 f'> **Channel:** {message.channel.mention}\n'
             return await ctx.send(embed=embed)
 
-        emoji = self._get_emoji(await self.settings.channel(message.channel).emoji())
         icon_url = await self.settings.channel(message.channel).icon_url()
-        role_id = await self.settings.channel(message.channel).role_id()
         footer_icon_url = await self.settings.channel(message.channel).footer_icon_url()
         footer_text = await self.settings.channel(message.channel).footer_text()
 
