@@ -125,7 +125,7 @@ class Update(BaseCog):
         async def a(context, result):
             try:
                 cid_, data_ = update_channels[list(update_channels.keys())[0]] if len(update_channels) <= 1 else \
-                    update_channels[str(result[0])]
+                    update_channels[result[0]]
 
                 update_message = discord.Embed()
                 update_message.title = result[1] if len(update_channels) > 1 else result[0]
@@ -149,6 +149,9 @@ class Update(BaseCog):
 
                 message = await channel.send(content=mention, embed=update_message,
                                              allowed_mentions=discord.AllowedMentions(everyone=True, roles=True))
+                with suppress(discord.Forbidden):
+                    await message.add_reaction(list(update_channels.keys())[0] if len(update_channels) <= 1
+                                               else result[0])
                 if channel.is_news():
                     with suppress(discord.Forbidden):
                         await message.publish()
