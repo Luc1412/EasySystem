@@ -110,8 +110,8 @@ class EmojiManager(BaseCog):
         embed.title = 'Emojis'
         for guild_id in await self.settings.emoji_server_ids():
             guild = ctx.bot.get_guild(guild_id)
-            text = '\n'.join([f'{e} • `{e.id}' for e in guild.emojis])
-            for i, page in enumerate(pagify(text, page_length=500, shorten_by=0)):
+            text = '\n'.join([f'{e} • `{e.id}`' for e in guild.emojis])
+            for i, page in enumerate(pagify(text, page_length=1000, shorten_by=0)):
                 title = f'**{guild}**:' if i == 0 else f'**{guild}** (continued):'
                 embed.add_field(name=title, value=page, inline=False)
         await ctx.send(embed=embed)
