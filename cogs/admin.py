@@ -89,54 +89,6 @@ class AdminCommands(commands.Cog):
         await message.add_reaction(self.bot.utils.icon.challenges())
 
     @commands.command()
-    @commands.is_owner()
-    async def emoji(self, ctx: Context, action: str, name_or_id: typing.Union[str, int] = None):
-        emoji_guild = ctx.bot.get_guild(652557455749939210)
-        if action == 'list':
-            emoji_message = ''
-            for emoji in emoji_guild.emojis:
-                emoji_message += f'{emoji} **-** `{emoji.id}`\n'
-            if len(emoji_guild.emojis) == 0:
-                emoji_message = 'No emoji on the emoji server.'
-            message = discord.Embed()
-            message.colour = discord.Color.dark_magenta()
-            message.title = 'Easy System Emoji'
-            message.description = emoji_message
-            await ctx.send(embed=message)
-        elif action == 'add':
-            if name_or_id is None:
-                return await ctx.bot.send_error(ctx, 'Please provide a emoji name')
-            if len(ctx.message.attachments) != 1:
-                return await ctx.bot.send_error(ctx, 'If you want to add a emoji you need to upload a file.')
-            image = await ctx.message.attachments[0].read()
-            try:
-                emoji = await emoji_guild.create_custom_emoji(name=name_or_id, image=image)
-            except discord.HTTPException as e:
-                return await ctx.bot.send_error(ctx, f'An error occurred: {e.text}')
-
-            message = discord.Embed()
-            message.colour = discord.Color.green()
-            message.set_thumbnail(url=emoji.url)
-            message.description = f'Successfully created emoji with the name **{emoji.name}** and the id `{emoji.id}`'
-            await ctx.send(embed=message)
-        elif action == 'remove':
-            if name_or_id is None:
-                return await ctx.bot.send_error(ctx, 'Please provide a emoji id')
-            try:
-                emoji = await emoji_guild.fetch_emoji(name_or_id)
-            except discord.NotFound:
-                return await ctx.bot.send_error(ctx, 'The given emoji wasn\'t found!')
-            await emoji.delete()
-
-            message = discord.Embed()
-            message.colour = discord.Color.dark_red()
-            message.set_thumbnail(url=emoji.url)
-            message.description = f'Successfully deleted emoji with the name **{emoji.name}** and the id `{emoji.id}`'
-            await ctx.send(embed=message)
-        else:
-            return await ctx.bot.send_error(ctx, 'Please use `!emoji <list/add/remove> [name or id]`')
-
-    @commands.command()
     @commands.guild_only()
     async def agree(self, ctx: commands.Context):
         return
