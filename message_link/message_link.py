@@ -35,6 +35,14 @@ class MessageLink(BaseCog):
                 return linked_message
         return None
 
+    async def _get_target(self, target: discord.Message):
+        linked_messages = await self.settings.guild(target.guild).linked_messages()
+        for linked_message in linked_messages:
+            if target.id == linked_message['target_message_id'] \
+                    and target.channel.id == linked_message['target_message_channel_id']:
+                return linked_message
+        return None
+
     async def _execute_edit(self, target: discord.Message, origin: discord.Message):
         data = origin.content
 
@@ -44,7 +52,7 @@ class MessageLink(BaseCog):
 
         embed = discord.Embed()
         with suppress(commands.BadArgument):
-            formatted_colour = await ColourConverter().convert(None, embed_data.get('colour'))
+            formatted_colour = await ColourConverter().convert(None, embed_data.get('colour', ''))
             embed.colour = formatted_colour
         if embed_data.get('author.text'):
             embed.set_author(name=embed_data['author.name'],
@@ -122,6 +130,27 @@ class MessageLink(BaseCog):
         await self.settings.guild(origin.guild).linked_messages.set(linked_messages)
 
         await self._execute_edit(target, origin)
+
+        embed = discord.Embed(colour=discord.Colour.green())
+        embed.description = 'Successfully unlinked message.'
+        return await ctx.send(embed=embed)
+
+    @commands.command(name='unlink')
+    async def _unlink(self, ctx: Context, target: discord.Message):
+        """"""
+        data = await self._get_target(target)
+        if not data:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = 'The message is not linked.'
+            return await ctx.send(embed=embed)
+        linked_messages = await self.settings.guild(ctx.guild).linked_messages()
+        linked_messages.remove(data)
+        await self.settings.guild(ctx.guild).linked_messages.set(linked_messages)
+
+        embed = discord.Embed(colour=discord.Colour.dark_blue())
+        embed.description = 'Successfully unlinked message.'
+        return await ctx.send(embed=embed)
+
 
 
 
