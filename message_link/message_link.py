@@ -27,7 +27,7 @@ class MessageLink(BaseCog):
         # }
         self.settings.register_guild(**default_guild_settings)
 
-    async def _get_link(self, origin: discord.Message):
+    async def _get_by_origin(self, origin: discord.Message):
         linked_messages = await self.settings.guild(origin.guild).linked_messages()
         for linked_message in linked_messages:
             if origin.id == linked_message['origin_message_id'] \
@@ -35,7 +35,7 @@ class MessageLink(BaseCog):
                 return linked_message
         return None
 
-    async def _get_target(self, target: discord.Message):
+    async def _get_by_target(self, target: discord.Message):
         linked_messages = await self.settings.guild(target.guild).linked_messages()
         for linked_message in linked_messages:
             if target.id == linked_message['target_message_id'] \
@@ -104,12 +104,17 @@ class MessageLink(BaseCog):
         target_message = await target_channel.fetch_message(data['target_message_id'])
         await self._execute_edit(target_message, message)
 
-    @commands.command(name='link')
-    async def _link(self, ctx: Context, target: discord.Message, origin: discord.Message):
+    @commands.group(name='mlink')
+    async def _mlink(self, ctx: Context):
         """"""
-        if await self._get_link(origin):
+        pass
+
+    @_mlink.command(name='add')
+    async def mlink_add(self, ctx: Context, target: discord.Message, origin: discord.Message):
+        """"""
+        if await self._get_by_origin(origin):
             embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = 'The origin message is already linked'
+            embed.description = 'The origin message is already linked.'
             return await ctx.send(embed=embed)
         if target.author.id != ctx.bot.user.id:
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -132,17 +137,18 @@ class MessageLink(BaseCog):
         await self._execute_edit(target, origin)
 
         embed = discord.Embed(colour=discord.Colour.green())
-        embed.description = 'Successfully unlinked message.'
+        embed.description = 'Successfully linked messages.'
         return await ctx.send(embed=embed)
 
-    @commands.command(name='unlink')
-    async def _unlink(self, ctx: Context, target: discord.Message):
+    @_mlink.command(name='remove')
+    async def mlink_remove(self, ctx: Context, target: discord.Message):
         """"""
-        data = await self._get_target(target)
+        data = self._get_by_target(target)
         if not data:
             embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = 'The message is not linked.'
+            embed.description = 'The target message isn\'t linked.'
             return await ctx.send(embed=embed)
+
         linked_messages = await self.settings.guild(ctx.guild).linked_messages()
         linked_messages.remove(data)
         await self.settings.guild(ctx.guild).linked_messages.set(linked_messages)
@@ -151,9 +157,31 @@ class MessageLink(BaseCog):
         embed.description = 'Successfully unlinked message.'
         return await ctx.send(embed=embed)
 
+    @_mlink.command(name='list')
+    async def mlink_list(self, ctx: Context):
+        """"""
+        embed = discord.Embed(colour=discord.Color.dark_magenta())
+        embed.title = 'Linked Messages'
+        for entry in await self.settings.guild(ctx.guild).linked_messages():
+            target_channel = self.bot.get_channel(entry['target_message_channel_id'])
+            try:
+                target_message = target_channel.fetch_message(entry['target_message_id'])
+            except (discord.NotFound, AttributeError):
+                target_message = None
 
+            origin_channel = self.bot.get_channel(entry['origin_message_channel_id'])
+            try:
+                origin_message = target_channel.fetch_message(entry['origin_message_id'])
+            except (discord.NotFound, AttributeError):
+                origin_message = None
 
+            embed.add_field(
+                name=f'Linked to {target_channel.mention if target_channel else "Not Found"}',
+                value=f'**Target Channel:** {target_channel.mention if target_channel else "Not Found"}\n'
+                      f'**Target Message:** {f"[Link]({target_message.jump_url})" if target_message else "Not Found"}\n'
+                      f'**Target Channel:** {origin_channel.mention if origin_channel else "Not Found"}\n'
+                      f'**Origin Message:** {f"[Link]({origin_message.jump_url})" if origin_message else "Not Found"}\n',
+                inline=False
+            )
 
-
-
-
+        await ctx.send(embed=embed)
