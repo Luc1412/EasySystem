@@ -148,7 +148,7 @@ class MessageLink(BaseCog):
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The target message isn\'t linked.'
             return await ctx.send(embed=embed)
-
+        print(data)
         linked_messages = await self.settings.guild(ctx.guild).linked_messages()
         linked_messages.remove(data)
         await self.settings.guild(ctx.guild).linked_messages.set(linked_messages)
