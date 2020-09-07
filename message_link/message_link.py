@@ -97,7 +97,7 @@ class MessageLink(BaseCog):
         message = channel.fetch_message(payload.message_id)
         if not isinstance(channel, discord.TextChannel):
             return
-        data = await self._get_link(message)
+        data = await self._get_by_origin(message)
         if not data:
             return
         target_channel = self.bot.get_channel(data['target_message_channel_id'])
@@ -177,9 +177,9 @@ class MessageLink(BaseCog):
 
             embed.add_field(
                 name=f'Linked to {target_channel.mention if target_channel else "Not Found"}',
-                value=f'**Target Channel:** {target_channel.mention if target_channel else "Not Found"}\n'
+                value=f'**Target Channel:** {target_channel if target_channel else "Not Found"}\n'
                       f'**Target Message:** {f"[Link]({target_message.jump_url})" if target_message else "Not Found"}\n'
-                      f'**Target Channel:** {origin_channel.mention if origin_channel else "Not Found"}\n'
+                      f'**Target Channel:** {origin_channel if origin_channel else "Not Found"}\n'
                       f'**Origin Message:** {f"[Link]({origin_message.jump_url})" if origin_message else "Not Found"}\n',
                 inline=False
             )
