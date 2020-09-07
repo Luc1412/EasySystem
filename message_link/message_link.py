@@ -67,6 +67,15 @@ class MessageLink(BaseCog):
         if embed_data.get('footer.text'):
             embed.set_footer(text=embed_data['footer.text'],
                              icon_url=embed_data.get('footer.icon', discord.embeds.EmptyEmbed))
+        if embed_data.get('fields'):
+            fields = embed_data['fields']
+            for i in range(1, 25):
+                if not fields.get(i):
+                    continue
+                if not fields[i].get('name') or not fields[i].get('value'):
+                    continue
+                embed.add_field(name=fields[i]['name'], value=fields[i]['name'], inline=fields[i].get('inline', True))
+
         with suppress(TypeError):
             embed.timestamp = datetime.utcfromtimestamp(int(embed_data.get('timestamp')))
 
@@ -88,7 +97,16 @@ class MessageLink(BaseCog):
         if len(results) == 0:
             return None
         for result in results:
+            if result.lower().starts_with('field'):
+                parts = result.lower().split('.')
+                if 'fields' not in embed_data:
+                    embed_data['fields'] = {}
+                if int(parts[1]) not in embed_data['fields']:
+                    embed_data['fields'][int(parts[1])] = {}
+                embed_data['fields'][int(parts[1])][parts[2]] = result[1]
+                continue
             embed_data[result[0]] = result[1]
+
         return embed_data
 
     @commands.Cog.listener(name='on_raw_message_edit')
