@@ -165,13 +165,13 @@ class MessageLink(BaseCog):
         for entry in await self.settings.guild(ctx.guild).linked_messages():
             target_channel = self.bot.get_channel(entry['target_message_channel_id'])
             try:
-                target_message = target_channel.fetch_message(entry['target_message_id'])
+                target_message = await target_channel.fetch_message(entry['target_message_id'])
             except (discord.NotFound, AttributeError):
                 target_message = None
 
             origin_channel = self.bot.get_channel(entry['origin_message_channel_id'])
             try:
-                origin_message = target_channel.fetch_message(entry['origin_message_id'])
+                origin_message = await target_channel.fetch_message(entry['origin_message_id'])
             except (discord.NotFound, AttributeError):
                 origin_message = None
 
