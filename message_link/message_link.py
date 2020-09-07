@@ -98,7 +98,7 @@ class MessageLink(BaseCog):
             return None
         for result in results:
             if result.lower().starts_with('field'):
-                parts = result.lower().split('.')
+                parts = result[0].lower().split('.')
                 if 'fields' not in embed_data:
                     embed_data['fields'] = {}
                 if int(parts[1]) not in embed_data['fields']:
