@@ -70,7 +70,7 @@ class MessageLink(BaseCog):
         with suppress(TypeError):
             embed.timestamp = datetime.utcfromtimestamp(int(embed_data.get('timestamp')))
 
-        await target.edit(embed=embed)
+        await target.edit(content=None, embed=embed)
 
     def _parse_data(self, data: str):
         embed_data = {}
@@ -94,7 +94,7 @@ class MessageLink(BaseCog):
     @commands.Cog.listener(name='on_raw_message_edit')
     async def on_message_update(self, payload: discord.RawMessageUpdateEvent):
         channel = self.bot.get_channel(payload.channel_id)
-        message = channel.fetch_message(payload.message_id)
+        message = await channel.fetch_message(payload.message_id)
         if not isinstance(channel, discord.TextChannel):
             return
         data = await self._get_by_origin(message)
