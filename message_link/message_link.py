@@ -143,7 +143,7 @@ class MessageLink(BaseCog):
     @_mlink.command(name='remove')
     async def mlink_remove(self, ctx: Context, target: discord.Message):
         """"""
-        data = self._get_by_target(target)
+        data = await self._get_by_target(target)
         if not data:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The target message isn\'t linked.'
@@ -176,10 +176,10 @@ class MessageLink(BaseCog):
                 origin_message = None
 
             embed.add_field(
-                name=f'Linked to {target_channel.mention if target_channel else "Not Found"}',
-                value=f'**Target Channel:** {target_channel if target_channel else "Not Found"}\n'
+                name=f'Linked to {target_channel if target_channel else "Not Found"}',
+                value=f'**Target Channel:** {target_channel.mention if target_channel else "Not Found"}\n'
                       f'**Target Message:** {f"[Link]({target_message.jump_url})" if target_message else "Not Found"}\n'
-                      f'**Target Channel:** {origin_channel if origin_channel else "Not Found"}\n'
+                      f'**Target Channel:** {origin_channel.mention if origin_channel else "Not Found"}\n'
                       f'**Origin Message:** {f"[Link]({origin_message.jump_url})" if origin_message else "Not Found"}\n',
                 inline=False
             )
