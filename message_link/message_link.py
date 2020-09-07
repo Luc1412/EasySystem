@@ -162,7 +162,11 @@ class MessageLink(BaseCog):
         """"""
         embed = discord.Embed(colour=discord.Color.dark_magenta())
         embed.title = 'Linked Messages'
-        for entry in await self.settings.guild(ctx.guild).linked_messages():
+        linked_messages = await self.settings.guild(ctx.guild).linked_messages()
+        if len(linked_messages) < 1:
+            embed.description = 'No messages are linked.'
+            return await ctx.send(embed=embed)
+        for entry in linked_messages:
             target_channel = self.bot.get_channel(entry['target_message_channel_id'])
             try:
                 target_message = await target_channel.fetch_message(entry['target_message_id'])
@@ -176,7 +180,7 @@ class MessageLink(BaseCog):
                 origin_message = None
 
             embed.add_field(
-                name=f'Linked to {target_channel if target_channel else "Not Found"}',
+                name=f'Linked to #{target_channel if target_channel else "Not Found"}',
                 value=f'**Target Channel:** {target_channel.mention if target_channel else "Not Found"}\n'
                       f'**Target Message:** {f"[Link]({target_message.jump_url})" if target_message else "Not Found"}\n'
                       f'**Target Channel:** {origin_channel.mention if origin_channel else "Not Found"}\n'
