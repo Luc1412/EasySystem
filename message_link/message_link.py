@@ -51,7 +51,7 @@ class MessageLink(BaseCog):
             return
 
         embed = discord.Embed()
-        with suppress(commands.BadArgument):
+        with suppress(commands.BadArgument, IndexError):
             formatted_colour = await ColourConverter().convert(None, embed_data.get('colour', ''))
             embed.colour = formatted_colour
         if embed_data.get('author.text'):
