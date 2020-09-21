@@ -29,10 +29,11 @@ class ReactionRoles(BaseCog):
         except ValueError:
             return emoji
 
-    @commands.group(name='reactionrole', invoke_without_command=True)
+    @commands.group(name='reactionroles')
     @checks.admin_or_permissions(manage_guild=True)
     async def _reaction_roles(self, ctx: Context):
         """"""
+        pass
 
     @_reaction_roles.command(name='add')
     async def _reaction_roles_add(self, ctx: Context, message: discord.Message, emoji: Union[discord.Emoji, str],
@@ -119,33 +120,48 @@ class ReactionRoles(BaseCog):
         return await ctx.send(embed=embed)
 
     async def get_role(self, payload: discord.RawReactionActionEvent):
+        print(1)
         message_indicator = f'{payload.channel_id}:{payload.message_id}'
         guild = self.bot.get_guild(payload.guild_id)
         if not guild:
+            print(2)
             return None
+        print(3)
         reaction_roles = await self.settings.guild(guild).reaction_roles()
         if message_indicator not in reaction_roles:
+            print(4)
             return None
         emoji: discord.PartialEmoji = payload.emoji
         emoji = payload.emoji.id if emoji.is_custom_emoji() else payload.emoji
         if emoji not in reaction_roles[message_indicator]:
+            print(5)
             return None
+        print(6)
         role = guild.get_role(reaction_roles[message_indicator][emoji])
         if not role:
+            print(7)
             return None
+        print(8)
         return role
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         guild = self.bot.get_guild(payload.guild_id)
+        print(11)
         if not guild:
+            print(12)
             return
+        print(13)
         member = guild.get_member(payload.user_id)
         if not member:
+            print(14)
             return
+        print(15)
         role = await self.get_role(payload)
         if not role:
+            print(16)
             return
+        print(17)
         with suppress(discord.Forbidden):
             await member.add_roles(role)
 
