@@ -128,12 +128,8 @@ class ReactionRoles(BaseCog):
         if message_indicator not in reaction_roles:
             return None
         emoji: discord.PartialEmoji = payload.emoji
-        emoji = payload.emoji.id if emoji.is_custom_emoji() else payload.emoji
-        print('emoji', emoji)
-        print('data', reaction_roles[message_indicator])
-        print('test', str(emoji) == '😄')
-        print(reaction_roles[message_indicator].get(str(emoji)))
-        if str(emoji) not in reaction_roles[message_indicator]:
+        emoji = payload.emoji.id if emoji.is_custom_emoji() else str(payload.emoji)
+        if emoji not in reaction_roles[message_indicator]:
             print(5)
             return None
         print(6)
