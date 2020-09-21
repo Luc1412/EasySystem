@@ -9,9 +9,7 @@ BaseCog = getattr(commands, "Cog", object)
 
 
 class ReactionRoles(BaseCog):
-    """
-
-    """
+    """This cog grant or removes roles by adding a reaction to a message."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -32,12 +30,14 @@ class ReactionRoles(BaseCog):
     @commands.group(name='reactionroles')
     @checks.admin_or_permissions(manage_guild=True)
     async def _reaction_roles(self, ctx: Context):
-        """"""
+        """Manage the reaction roles."""
         pass
 
     @_reaction_roles.command(name='add')
     async def _reaction_roles_add(self, ctx: Context, message: discord.Message, emoji: Union[discord.Emoji, str],
                                   role: discord.Role):
+        """Add a reaction role."""
+        # TODO: Check permissions if the bot is able to grant the role
         reaction_roles = await self.settings.guild(ctx.guild).reaction_roles()
         message_indicator = f'{message.channel.id}:{message.id}'
         raw_emoji = str(emoji.id if isinstance(emoji, discord.Emoji) else emoji)
@@ -72,6 +72,7 @@ class ReactionRoles(BaseCog):
 
     @_reaction_roles.command(name='remove')
     async def _reaction_roles_remove(self, ctx: Context, message: discord.Message, emoji: Union[discord.Emoji, str]):
+        """Remove a reaction role."""
         reaction_roles = await self.settings.guild(ctx.guild).reaction_roles()
         message_indicator = f'{message.channel.id}:{message.id}'
         raw_emoji = str(emoji.id if isinstance(emoji, discord.Emoji) else emoji)
@@ -98,6 +99,7 @@ class ReactionRoles(BaseCog):
 
     @_reaction_roles.command(name='list')
     async def _reaction_roles_list(self, ctx: Context):
+        """List all setup reaction roles."""
         reaction_roles = await self.settings.guild(ctx.guild).reaction_roles()
         if len(reaction_roles) == 0:
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -129,17 +131,11 @@ class ReactionRoles(BaseCog):
         if message_indicator not in reaction_roles:
             return None
         emoji = str(payload.emoji.id if payload.emoji.is_custom_emoji() else payload.emoji)
-        print('emoji', emoji)
-        print('data', reaction_roles[message_indicator])
         if emoji not in reaction_roles[message_indicator]:
-            print(5)
             return None
-        print(6)
         role = guild.get_role(reaction_roles[message_indicator][emoji])
         if not role:
-            print(7)
             return None
-        print(8)
         return role
 
     @commands.Cog.listener()
@@ -150,12 +146,9 @@ class ReactionRoles(BaseCog):
         member = guild.get_member(payload.user_id)
         if not member:
             return
-        print(15)
         role = await self.get_role(payload)
         if not role:
-            print(16)
             return
-        print(17)
         with suppress(discord.Forbidden):
             await member.add_roles(role)
 
