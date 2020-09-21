@@ -120,19 +120,17 @@ class ReactionRoles(BaseCog):
         return await ctx.send(embed=embed)
 
     async def get_role(self, payload: discord.RawReactionActionEvent):
-        print(1)
         message_indicator = f'{payload.channel_id}:{payload.message_id}'
         guild = self.bot.get_guild(payload.guild_id)
         if not guild:
-            print(2)
             return None
-        print(3)
         reaction_roles = await self.settings.guild(guild).reaction_roles()
         if message_indicator not in reaction_roles:
-            print(4)
             return None
         emoji: discord.PartialEmoji = payload.emoji
         emoji = payload.emoji.id if emoji.is_custom_emoji() else payload.emoji
+        print('emoji', emoji)
+        print('data', reaction_roles[message_indicator])
         if emoji not in reaction_roles[message_indicator]:
             print(5)
             return None
@@ -147,14 +145,10 @@ class ReactionRoles(BaseCog):
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         guild = self.bot.get_guild(payload.guild_id)
-        print(11)
         if not guild:
-            print(12)
             return
-        print(13)
         member = guild.get_member(payload.user_id)
         if not member:
-            print(14)
             return
         print(15)
         role = await self.get_role(payload)
