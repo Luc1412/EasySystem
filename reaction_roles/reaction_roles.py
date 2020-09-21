@@ -131,9 +131,9 @@ class ReactionRoles(BaseCog):
         emoji = payload.emoji.id if emoji.is_custom_emoji() else payload.emoji
         print('emoji', emoji)
         print('data', reaction_roles[message_indicator])
-        print('test', emoji == '😄')
-        print(reaction_roles[message_indicator].get(emoji))
-        if emoji not in reaction_roles[message_indicator]:
+        print('test', str(emoji) == '😄')
+        print(reaction_roles[message_indicator].get(str(emoji)))
+        if str(emoji) not in reaction_roles[message_indicator]:
             print(5)
             return None
         print(6)
