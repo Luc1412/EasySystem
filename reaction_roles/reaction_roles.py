@@ -40,11 +40,12 @@ class ReactionRoles(BaseCog):
                                   role: discord.Role):
         reaction_roles = await self.settings.guild(ctx.guild).reaction_roles()
         message_indicator = f'{message.channel.id}:{message.id}'
+        raw_emoji = str(emoji.id if isinstance(emoji, discord.Emoji) else emoji)
 
         if message_indicator in reaction_roles:
-            if emoji in reaction_roles[message_indicator]:
+            if raw_emoji in reaction_roles[message_indicator]:
                 embed = discord.Embed(colour=discord.Colour.dark_red())
-                embed.description = f'There is already a reaction roll registered with this emoji.\n' \
+                embed.description = f'There is already a reaction role registered with this emoji.\n' \
                                     f'> Emoji: {emoji}\n' \
                                     f'> Message: {message.jump_url}'
                 return await ctx.send(embed=embed)
@@ -60,24 +61,24 @@ class ReactionRoles(BaseCog):
                                 f'> Message: {message.jump_url}'
             return await ctx.send(embed=embed)
 
-        reaction_roles[message_indicator][str(emoji)] = role.id
+        reaction_roles[message_indicator][raw_emoji] = role.id
         await self.settings.guild(ctx.guild).reaction_roles.set(reaction_roles)
         embed = discord.Embed(colour=discord.Colour.green())
         embed.description = f'The reaction role has been successfully added.\n' \
                             f'> Emoji: {emoji}\n' \
                             f'> Message: {message.jump_url}\n' \
                             f'> Role: {role.mention}'
-
         return await ctx.send(embed=embed)
 
     @_reaction_roles.command(name='remove')
     async def _reaction_roles_remove(self, ctx: Context, message: discord.Message, emoji: Union[discord.Emoji, str]):
         reaction_roles = await self.settings.guild(ctx.guild).reaction_roles()
         message_indicator = f'{message.channel.id}:{message.id}'
+        raw_emoji = str(emoji.id if isinstance(emoji, discord.Emoji) else emoji)
 
-        if message_indicator not in reaction_roles or emoji not in reaction_roles[message_indicator]:
+        if message_indicator not in reaction_roles or raw_emoji not in reaction_roles[message_indicator]:
             embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = f'There is already a reaction roll registered with this emoji.\n' \
+            embed.description = f'There is no reaction role registered with this emoji.\n' \
                                 f'> Emoji: {emoji}\n' \
                                 f'> Message: {message.jump_url}'
             return await ctx.send(embed=embed)
@@ -85,7 +86,7 @@ class ReactionRoles(BaseCog):
         with suppress(discord.Forbidden):
             await message.remove_reaction(emoji, ctx.guild.me)
 
-        del reaction_roles[message_indicator][str(emoji)]
+        del reaction_roles[message_indicator][raw_emoji]
         if len(reaction_roles[message_indicator]) == 0:
             del reaction_roles[message_indicator]
         await self.settings.guild(ctx.guild).reaction_roles.set(reaction_roles)
@@ -127,8 +128,7 @@ class ReactionRoles(BaseCog):
         reaction_roles = await self.settings.guild(guild).reaction_roles()
         if message_indicator not in reaction_roles:
             return None
-        emoji: discord.PartialEmoji = payload.emoji
-        emoji = payload.emoji.id if emoji.is_custom_emoji() else str(payload.emoji)
+        emoji = str(payload.emoji.id if payload.emoji.is_custom_emoji() else payload.emoji)
         print('emoji', emoji)
         print('data', reaction_roles[message_indicator])
         if emoji not in reaction_roles[message_indicator]:
