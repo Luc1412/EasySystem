@@ -136,7 +136,7 @@ class ReactionRoles(BaseCog):
         return role
 
     @commands.Cog.listener()
-    def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
+    async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
         guild = self.bot.get_guild(payload.guild_id)
         if not guild:
             return
@@ -150,7 +150,7 @@ class ReactionRoles(BaseCog):
             await member.add_roles(role)
 
     @commands.Cog.listener()
-    def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
+    async def on_raw_reaction_remove(self, payload: discord.RawReactionActionEvent):
         guild = self.bot.get_guild(payload.guild_id)
         if not guild:
             return
