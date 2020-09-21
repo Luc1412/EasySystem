@@ -1,5 +1,4 @@
 from contextlib import suppress
-from typing import Union
 
 import discord
 from redbot.core import Config, checks
