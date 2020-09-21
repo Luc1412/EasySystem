@@ -129,7 +129,9 @@ class CommandChannel(BaseCog):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author.bot or await self.bot.is_automod_immune(message.author):
+        if not isinstance(message.channel, discord.TextChannel) or message.author.bot:
+            return
+        if await self.bot.is_automod_immune(message.author):
             return
         command_channel_ids = await self.settings.guild(message.guild).channel_ids()
         if message.channel.id not in command_channel_ids:
