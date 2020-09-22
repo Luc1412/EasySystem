@@ -1,6 +1,7 @@
 import re
 from contextlib import suppress
 from datetime import datetime
+from typing import List
 
 import discord
 from discord.ext.commands import ColourConverter
@@ -20,8 +21,11 @@ class MessageLink(BaseCog):
             "linked_messages": []
         }
         # {
-        #     "origin_message_channel_id": 71298321,
-        #     "origin_message_id": 9723713,
+        #     "name": "",
+        #     "origin_messages": [
+        #         "channel_id": 08324,
+        #         "id": 903429,
+        #     ],
         #     "target_message_channel_id": 62739183,
         #     "target_message_id": 213213189
         # }
@@ -30,9 +34,9 @@ class MessageLink(BaseCog):
     async def _get_by_origin(self, origin: discord.Message):
         linked_messages = await self.settings.guild(origin.guild).linked_messages()
         for linked_message in linked_messages:
-            if origin.id == linked_message['origin_message_id'] \
-                    and origin.channel.id == linked_message['origin_message_channel_id']:
-                return linked_message
+            for message in linked_message['origin_messages']:
+                if origin.id == message['id'] and origin.channel.id == message['channel_id']:
+                    return linked_message
         return None
 
     async def _get_by_target(self, target: discord.Message):
@@ -43,8 +47,8 @@ class MessageLink(BaseCog):
                 return linked_message
         return None
 
-    async def _execute_edit(self, target: discord.Message, origin: discord.Message):
-        data = origin.content
+    async def _execute_edit(self, target: discord.Message, origins: List[discord.Message]):
+        data = '\n'.join(m.content for m in origins)
 
         embed_data = self._parse_data(data)
         if not embed_data:
@@ -99,7 +103,7 @@ class MessageLink(BaseCog):
             if len(results) == 0:
                 if not current:
                     continue
-                if current.lower().startswith('field'):
+                if current.lower().startswith('field'):  # TODO: IMprove
                     parts = current.lower().split('.')
                     if 'fields' not in embed_data:
                         embed_data['fields'] = {}
@@ -141,7 +145,7 @@ class MessageLink(BaseCog):
         pass
 
     @_mlink.command(name='add')
-    async def mlink_add(self, ctx: Context, target: discord.Message, origin: discord.Message):
+    async def mlink_add(self, ctx: Context, target: discord.Message, origin: discord.Message, *, name: str = None):
         """"""
         if await self._get_by_origin(origin):
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -157,12 +161,23 @@ class MessageLink(BaseCog):
             return await ctx.send(embed=embed)
 
         linked_messages = await self.settings.guild(origin.guild).linked_messages()
-        linked_messages.append({
-            'origin_message_channel_id': origin.channel.id,
-            'origin_message_id': origin.id,
-            'target_message_channel_id': target.channel.id,
-            'target_message_id': target.id
-        })
+        existing_entry = await self._get_by_target(target)
+        if existing_entry:
+            existing_entry['origin_messages'].append({
+                'channel_id': origin.channel.id,
+                'id': origin.id
+            })
+            linked_messages[linked_messages.index(existing_entry)] = existing_entry
+        else:
+            linked_messages.append({
+                'name': name,
+                'origin_messages': [{
+                    'channel_id': origin.channel.id,
+                    'id': origin.id
+                }],
+                'target_message_channel_id': target.channel.id,
+                'target_message_id': target.id
+            })
         await self.settings.guild(origin.guild).linked_messages.set(linked_messages)
 
         await self._execute_edit(target, origin)
@@ -179,7 +194,6 @@ class MessageLink(BaseCog):
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The target message isn\'t linked.'
             return await ctx.send(embed=embed)
-        print(data)
         linked_messages = await self.settings.guild(ctx.guild).linked_messages()
         linked_messages.remove(data)
         await self.settings.guild(ctx.guild).linked_messages.set(linked_messages)
@@ -204,19 +218,20 @@ class MessageLink(BaseCog):
             except (discord.NotFound, AttributeError):
                 target_message = None
 
-            origin_channel = self.bot.get_channel(entry['origin_message_channel_id'])
-            try:
-                origin_message = await target_channel.fetch_message(entry['origin_message_id'])
-            except (discord.NotFound, AttributeError):
-                origin_message = None
+            name = entry['name'] if entry.get('name') else f'Linked to #{target_channel if target_channel else "Not Found"}'
 
-            embed.add_field(
-                name=f'Linked to #{target_channel if target_channel else "Not Found"}',
-                value=f'**Target Channel:** {target_channel.mention if target_channel else "Not Found"}\n'
-                      f'**Target Message:** {f"[Link]({target_message.jump_url})" if target_message else "Not Found"}\n'
-                      f'**Target Channel:** {origin_channel.mention if origin_channel else "Not Found"}\n'
-                      f'**Origin Message:** {f"[Link]({origin_message.jump_url})" if origin_message else "Not Found"}\n',
-                inline=False
-            )
+            value = f'**Target Channel:** {target_channel.mention if target_channel else "Not Found"}\n' \
+                    f'**Target Message:** {f"[Link]({target_message.jump_url})" if target_message else "Not Found"}'
+
+            for i, origin_data in enumerate(entry['origin_messages']):
+                channel = self.bot.get_channel(origin_data['origin_message_channel_id'])
+                try:
+                    message = await channel.fetch_message(origin_data['origin_message_id'])
+                except (discord.NotFound, AttributeError):
+                    message = None
+                value += f'**Origin Channel:** {channel.mention if channel else "Not Found"}\n' \
+                         f'**Origin Message:** {f"[Link]({message.jump_url})" if message else "Not Found"}\n'
+
+            embed.add_field(name=name, value=value, inline=False)
 
         await ctx.send(embed=embed)
