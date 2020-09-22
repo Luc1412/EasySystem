@@ -177,12 +177,20 @@ class MessageLink(BaseCog):
 
         linked_messages = await self.settings.guild(origin.guild).linked_messages()
         existing_entry = await self._get_by_target(target)
+        origin_messages = []
         if existing_entry:
-            existing_entry['origin_messages'].append({
+            existing_entry['origins'].append({
                 'channel_id': origin.channel.id,
                 'id': origin.id
             })
             linked_messages[linked_messages.index(existing_entry)] = existing_entry
+
+            for origin in existing_entry['origins']:
+                origin_channel = self.bot.get_channel(origin['channel_id'])
+                if not origin_channel:
+                    continue
+                with suppress(discord.NotFound):
+                    origin_messages.append(await origin_channel.fetch_message(origin['id']))
         else:
             linked_messages.append({
                 'name': name,
@@ -193,9 +201,10 @@ class MessageLink(BaseCog):
                 'target_channel_id': target.channel.id,
                 'target_id': target.id
             })
+            origin_messages.append(origin)
         await self.settings.guild(origin.guild).linked_messages.set(linked_messages)
 
-        await self._execute_edit(target, origin)
+        await self._execute_edit(target, origin_messages)
 
         embed = discord.Embed(colour=discord.Colour.green())
         embed.description = 'Successfully linked messages.'
@@ -227,7 +236,7 @@ class MessageLink(BaseCog):
             embed.description = 'No messages are linked.'
             return await ctx.send(embed=embed)
         for entry in linked_messages:
-            target_channel = self.bot.get_channel(entry['target_message_channel_id'])
+            target_channel = self.bot.get_channel(entry['target_channel_id'])
             try:
                 target_message = await target_channel.fetch_message(entry['target_message_id'])
             except (discord.NotFound, AttributeError):
@@ -238,10 +247,10 @@ class MessageLink(BaseCog):
             value = f'**Target Channel:** {target_channel.mention if target_channel else "Not Found"}\n' \
                     f'**Target Message:** {f"[Link]({target_message.jump_url})" if target_message else "Not Found"}'
 
-            for i, origin_data in enumerate(entry['origin_messages']):
-                channel = self.bot.get_channel(origin_data['origin_message_channel_id'])
+            for i, origin_data in enumerate(entry['origins']):
+                channel = self.bot.get_channel(origin_data['channel_id'])
                 try:
-                    message = await channel.fetch_message(origin_data['origin_message_id'])
+                    message = await channel.fetch_message(origin_data['id'])
                 except (discord.NotFound, AttributeError):
                     message = None
                 value += f'**Origin Channel:** {channel.mention if channel else "Not Found"}\n' \
