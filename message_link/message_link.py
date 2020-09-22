@@ -107,7 +107,7 @@ class MessageLink(BaseCog):
                         embed_data['fields'][int(parts[1])] = {}
                     embed_data['fields'][int(parts[1])][parts[2]] = f'\n{line}'
                     continue
-                embed_data[result[0]] = f'\n{line}'
+                embed_data[current] = f'\n{line}'
             for result in results:
                 current = result[0]
                 if result[0].lower().startswith('field'):
