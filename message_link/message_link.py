@@ -34,7 +34,7 @@ class MessageLink(BaseCog):
     async def _get_by_origin(self, origin: discord.Message):
         linked_messages = await self.settings.guild(origin.guild).linked_messages()
         for linked_message in linked_messages:
-            for message in linked_message['origin_messages']:
+            for message in linked_message['origins']:
                 if origin.id == message['id'] and origin.channel.id == message['channel_id']:
                     return linked_message
         return None
@@ -42,8 +42,8 @@ class MessageLink(BaseCog):
     async def _get_by_target(self, target: discord.Message):
         linked_messages = await self.settings.guild(target.guild).linked_messages()
         for linked_message in linked_messages:
-            if target.id == linked_message['target_message_id'] \
-                    and target.channel.id == linked_message['target_message_channel_id']:
+            if target.id == linked_message['target_id'] \
+                    and target.channel.id == linked_message['target_channel_id']:
                 return linked_message
         return None
 
@@ -135,9 +135,24 @@ class MessageLink(BaseCog):
         data = await self._get_by_origin(message)
         if not data:
             return
-        target_channel = self.bot.get_channel(data['target_message_channel_id'])
-        target_message = await target_channel.fetch_message(data['target_message_id'])
-        await self._execute_edit(target_message, message)
+
+        origin_messages = []
+        for origin in data['origins']:
+            origin_channel = self.bot.get_channel(origin['channel_id'])
+            if not origin_channel:
+                continue
+            with suppress(discord.NotFound):
+                origin_messages.append(await origin_channel.fetch_message(origin['id']))
+
+        target_channel = self.bot.get_channel(data['target_channel_id'])
+        if not target_channel:
+            return
+        try:
+            target_message = await target_channel.fetch_message(data['id'])
+        except discord.NotFound:
+            return
+
+        await self._execute_edit(target_message, origin_messages)
 
     @commands.group(name='mlink')
     async def _mlink(self, ctx: Context):
@@ -171,12 +186,12 @@ class MessageLink(BaseCog):
         else:
             linked_messages.append({
                 'name': name,
-                'origin_messages': [{
+                'origin': [{
                     'channel_id': origin.channel.id,
                     'id': origin.id
                 }],
-                'target_message_channel_id': target.channel.id,
-                'target_message_id': target.id
+                'target_channel_id': target.channel.id,
+                'target_id': target.id
             })
         await self.settings.guild(origin.guild).linked_messages.set(linked_messages)
 
