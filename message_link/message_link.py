@@ -194,7 +194,7 @@ class MessageLink(BaseCog):
         else:
             linked_messages.append({
                 'name': name,
-                'origin': [{
+                'origins': [{
                     'channel_id': origin.channel.id,
                     'id': origin.id
                 }],
