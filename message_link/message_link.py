@@ -7,7 +7,7 @@ from discord.ext.commands import ColourConverter
 from redbot.core import Config
 from redbot.core.commands import commands, Context
 
-from update.update import BaseCog
+BaseCog = getattr(commands, "Cog", object)
 
 
 class MessageLink(BaseCog):

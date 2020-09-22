@@ -3,7 +3,7 @@ from redbot.core import Config, checks
 from redbot.core.commands import commands, Context
 from redbot.core.utils.chat_formatting import pagify
 
-from update.update import BaseCog
+BaseCog = getattr(commands, "Cog", object)
 
 
 class EmojiManager(BaseCog):
