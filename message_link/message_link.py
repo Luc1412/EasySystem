@@ -238,7 +238,7 @@ class MessageLink(BaseCog):
         for entry in linked_messages:
             target_channel = self.bot.get_channel(entry['target_channel_id'])
             try:
-                target_message = await target_channel.fetch_message(entry['target_message_id'])
+                target_message = await target_channel.fetch_message(entry['target_id'])
             except (discord.NotFound, AttributeError):
                 target_message = None
 
