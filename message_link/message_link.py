@@ -105,9 +105,9 @@ class MessageLink(BaseCog):
                         embed_data['fields'] = {}
                     if int(parts[1]) not in embed_data['fields']:
                         embed_data['fields'][int(parts[1])] = {}
-                    embed_data['fields'][int(parts[1])][parts[2]] = f'\n{line}'
+                    embed_data['fields'][int(parts[1])][parts[2]] += f'\n{line}'
                     continue
-                embed_data[current] = f'\n{line}'
+                embed_data[current] += f'\n{line}'
             for result in results:
                 current = result[0]
                 if result[0].lower().startswith('field'):
