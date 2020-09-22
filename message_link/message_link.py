@@ -93,19 +93,32 @@ class MessageLink(BaseCog):
                 r'footer\.text|footer\.icon|' \
                 r'timestamp)#' \
                 r'(?: |)(.*)'
-        results = re.findall(regex, data, re.IGNORECASE | re.MULTILINE)
-        if len(results) == 0:
-            return None
-        for result in results:
-            if result[0].lower().startswith('field'):
-                parts = result[0].lower().split('.')
-                if 'fields' not in embed_data:
-                    embed_data['fields'] = {}
-                if int(parts[1]) not in embed_data['fields']:
-                    embed_data['fields'][int(parts[1])] = {}
-                embed_data['fields'][int(parts[1])][parts[2]] = result[1]
-                continue
-            embed_data[result[0]] = result[1]
+        current = None
+        for line in data.split('\n'):
+            results = re.findall(regex, line, re.IGNORECASE | re.MULTILINE)
+            if len(results) == 0:
+                if not current:
+                    continue
+                if current.lower().startswith('field'):
+                    parts = current.lower().split('.')
+                    if 'fields' not in embed_data:
+                        embed_data['fields'] = {}
+                    if int(parts[1]) not in embed_data['fields']:
+                        embed_data['fields'][int(parts[1])] = {}
+                    embed_data['fields'][int(parts[1])][parts[2]] = f'\n{line}'
+                    continue
+                embed_data[result[0]] = f'\n{line}'
+            for result in results:
+                current = result[0]
+                if result[0].lower().startswith('field'):
+                    parts = result[0].lower().split('.')
+                    if 'fields' not in embed_data:
+                        embed_data['fields'] = {}
+                    if int(parts[1]) not in embed_data['fields']:
+                        embed_data['fields'][int(parts[1])] = {}
+                    embed_data['fields'][int(parts[1])][parts[2]] = result[1]
+                    continue
+                embed_data[result[0]] = result[1]
 
         return embed_data
 
