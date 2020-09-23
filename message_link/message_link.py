@@ -148,7 +148,7 @@ class MessageLink(BaseCog):
         if not target_channel:
             return
         try:
-            target_message = await target_channel.fetch_message(data['id'])
+            target_message = await target_channel.fetch_message(data['target_id'])
         except discord.NotFound:
             return
 
@@ -253,7 +253,7 @@ class MessageLink(BaseCog):
                     message = await channel.fetch_message(origin_data['id'])
                 except (discord.NotFound, AttributeError):
                     message = None
-                value += f'**Origin Channel:** {channel.mention if channel else "Not Found"}\n' \
+                value += f'\n\n**Origin Channel:** {channel.mention if channel else "Not Found"}\n' \
                          f'**Origin Message:** {f"[Link]({message.jump_url})" if message else "Not Found"}\n'
 
             embed.add_field(name=name, value=value, inline=False)
