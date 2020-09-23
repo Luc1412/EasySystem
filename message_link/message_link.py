@@ -186,12 +186,12 @@ class MessageLink(BaseCog):
             })
             linked_messages[index] = existing_entry
 
-            for origin in existing_entry['origins']:
-                origin_channel = self.bot.get_channel(origin['channel_id'])
+            for origin_m in existing_entry['origins']:
+                origin_channel = self.bot.get_channel(origin_m['channel_id'])
                 if not origin_channel:
                     continue
                 with suppress(discord.NotFound):
-                    origin_messages.append(await origin_channel.fetch_message(origin['id']))
+                    origin_messages.append(await origin_channel.fetch_message(origin_m['id']))
         else:
             linked_messages.append({
                 'name': name,
@@ -254,8 +254,8 @@ class MessageLink(BaseCog):
                     message = await channel.fetch_message(origin_data['id'])
                 except (discord.NotFound, AttributeError):
                     message = None
-                value += f'\n\n**Origin {i} Channel:** {channel.mention if channel else "Not Found"}\n' \
-                         f'**Origin {i} Message:** {f"[Link]({message.jump_url})" if message else "Not Found"}\n'
+                value += f'\n\n**Origin {i + 1} Channel:** {channel.mention if channel else "Not Found"}\n' \
+                         f'**Origin {i + 1} Message:** {f"[Link]({message.jump_url})" if message else "Not Found"}\n'
 
             embed.add_field(name=name, value=value, inline=False)
 
