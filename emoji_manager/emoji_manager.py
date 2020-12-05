@@ -71,6 +71,10 @@ class EmojiManager(BaseCog):
             return await ctx.send(embed=embed)
         image = await attachment.read()
         emoji_guild = await self._get_guild(is_animated)
+        if not emoji_guild:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = f'There was no free emoji guild found.'
+            return await ctx.send(embed=embed)
         try:
             emoji = await emoji_guild.create_custom_emoji(name=name, image=image)
         except discord.HTTPException as e:
