@@ -33,6 +33,7 @@ class EmojiManager(BaseCog):
             guild = self.bot.get_guild(guild_id)
             for emoji in guild.emojis:
                 names.append(emoji.name.lower())
+        return names
 
     @commands.group(name='emoji')
     @checks.is_owner()
