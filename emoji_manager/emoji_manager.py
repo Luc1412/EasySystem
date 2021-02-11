@@ -78,7 +78,13 @@ class EmojiManager(BaseCog):
         try:
             emoji = await emoji_guild.create_custom_emoji(name=name, image=image)
         except discord.HTTPException as e:
-            return await ctx.bot.send_error(ctx, f'An error occurred: {e.text}')
+            if e.code == 50035:
+                embed = discord.Embed(colour=discord.Colour.dark_red())
+                embed.description = f'The image has to be smaller than 256KB.'
+                return await ctx.send(embed=embed)
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = f'An unknown error occurred {e.text}'
+            return await ctx.send(embed=embed)
 
         message = discord.Embed(colour=discord.Color.green())
         message.set_thumbnail(url=emoji.url)
