@@ -1,4 +1,4 @@
-from emoji_manager.emoji_manager import EmojiManager
+from emojimanager.emoji_manager import EmojiManager
 
 
 def setup(bot):

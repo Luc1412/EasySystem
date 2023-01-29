@@ -21,7 +21,7 @@ class Update(BaseCog):
         self.settings = Config.get_conf(self, 200912392)
         default_channel_settings = {
             "name": None,
-            "emoji": None,
+            "emojimanager": None,
             "icon_url": None,
             "role_id": None,
             "footer_icon_url": None,
@@ -47,7 +47,7 @@ class Update(BaseCog):
         for cid, data in (await self.settings.all_channels()).items():
             if not ctx.guild.get_channel(cid):
                 continue
-            emoji = data['emoji']
+            emoji = data['emojimanager']
             emoji = self._get_emoji(emoji)
             if not emoji:
                 continue
@@ -297,7 +297,7 @@ class Update(BaseCog):
             role = ctx.guild.get_role(data['role_id'])
             embed.add_field(name=f'**{data["name"]}**',
                             value=f'> **Channel:** {channel.mention}\n'
-                                  f'> **Emoji:** {self._get_emoji(data["emoji"])}\n'
+                                  f'> **Emoji:** {self._get_emoji(data["emojimanager"])}\n'
                                   f'> **Image URL:** {data["icon_url"] if data["icon_url"] else ":x:"}\n'
                                   f'> **Role:** {role.mention if role else ":x:"}\n'
                                   f'> **Footer Text:** {data["footer_text"] if data["footer_text"] else ":x:"}\n'

@@ -1,1 +1,1 @@
-Red-DiscordBot
+git+https://github.com/Cog-Creators/Red-DiscordBot.git#egg=Red-DiscordBot
