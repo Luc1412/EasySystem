@@ -27,10 +27,15 @@ class EmojiManager(commands.Cog):
         pass
 
     @_emoji.command(name='add', description='Add an emoji to one of the emoji servers.')
-    @app_commands.describe(name='The name of the emoji.', description='The name of the emojimanager.')
-    async def _emoji_add(self, ctx: Context, name: str, icon: discord.Attachment):
-        """Add an emoji to one of the emoji servers."""
-        is_animated = icon.filename.endswith('.gif')
+    @app_commands.describe(name='The name of the emoji.', image='The emoji image file')
+    async def _emoji_add(self, ctx: Context, name: str, image: discord.Attachment):
+        # Check if image is valid
+        if image.content_type not in ('image/png', 'image/jpeg', 'image/gif'):
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = f'The image has to be a png, jpg or gif.'
+            return await ctx.send(embed=embed)
+
+        is_animated = image.content_type == 'image/gif'
 
         if name.lower() in await self._get_emoji_names():
             embed = discord.Embed(colour=discord.Colour.dark_red())

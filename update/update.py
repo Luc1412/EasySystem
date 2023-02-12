@@ -56,7 +56,7 @@ class Update(commands.Cog):
             embed.description = f'You selected to mention a role but no role is set for the channel.'
             return await ctx.send(embed=embed)
 
-        if image and image.content_type not in ['image/png', 'image/jpeg', 'image/gif']:
+        if image and image.content_type not in ('image/png', 'image/jpeg', 'image/gif'):
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = f'The image is not a valid image.'
             return await ctx.send(embed=embed)
