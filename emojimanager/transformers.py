@@ -16,7 +16,7 @@ class EmojiTransformer(app_commands.Transformer):
         return [
             app_commands.Choice(name=e.name, value=str(e.id))
             for e in interaction.client.emojis
-            if str(e.id) == current or e.name.startswith(current) and e.guild.id in guild_ids
+            if (str(e.id) == current or e.name.startswith(current)) and e.guild.id in guild_ids
         ]
 
     async def transform(self, interaction: discord.Interaction, value: str, /) -> Optional[discord.Emoji]:
@@ -31,7 +31,7 @@ class GuildTransformer(app_commands.Transformer):
 
     async def autocomplete(self, interaction: discord.Interaction, current: str, /) -> List[app_commands.Choice[str]]:
         return [
-            app_commands.Choice(name=g.name, value=g.id)
+            app_commands.Choice(name=g.name, value=str(g.id))
             for g in interaction.client.guilds
             if str(g.id) == current or g.name.startswith(current)
         ]
