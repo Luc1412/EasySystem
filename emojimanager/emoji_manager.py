@@ -47,7 +47,7 @@ class EmojiManager(commands.Cog):
             embed.description = f'There was no free emoji guild found.'
             return await ctx.send(embed=embed)
         try:
-            emoji = await emoji_guild.create_custom_emoji(name=name, image=await icon.read())
+            emoji = await emoji_guild.create_custom_emoji(name=name, image=await image.read())
         except discord.HTTPException as e:
             if e.code == 50035:
                 embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -99,10 +99,10 @@ class EmojiManager(commands.Cog):
             text = '\n'.join([f'{e} • `{e.id}`' for e in guild.emojis])
             for i, page in enumerate(pagify(text, page_length=1000, shorten_by=0)):
                 title = f'**{guild}**:' if i == 0 else f'**{guild}** (continued):'
-                embed.add_field(name=title, value=page, inline=False)
+                embed.add_field(name=title, value=page)
         await ctx.send(embed=embed)
 
-    @commands.group(name='emoji-settings')
+    @commands.hybrid_group(name='emoji-settings')
     @app_commands.default_permissions()
     async def _emoji_settings(self, ctx: Context):
         """Set up the emoji manager."""
