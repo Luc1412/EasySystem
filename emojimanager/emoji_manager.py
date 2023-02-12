@@ -76,7 +76,7 @@ class EmojiManager(commands.Cog):
             embed.description = 'The emoji wasn\'t found.'
             return await ctx.send(embed=embed)
         guild_ids = await self.settings.emoji_server_ids()
-        if emoji.guild.id in guild_ids:
+        if emoji.guild.id not in guild_ids:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The emoji isn\'t an emoji managed by this server.'
             return await ctx.send(embed=embed)
