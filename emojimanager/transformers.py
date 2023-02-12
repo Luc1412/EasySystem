@@ -17,7 +17,7 @@ class EmojiTransformer(app_commands.Transformer):
             app_commands.Choice(name=e.name, value=str(e.id))
             for e in interaction.client.emojis
             if (str(e.id) == current or e.name.startswith(current)) and e.guild.id in guild_ids
-        ]
+        ][:25]
 
     async def transform(self, interaction: discord.Interaction, value: str, /) -> Optional[discord.Emoji]:
         try:
@@ -34,7 +34,7 @@ class GuildTransformer(app_commands.Transformer):
             app_commands.Choice(name=g.name, value=str(g.id))
             for g in interaction.client.guilds
             if str(g.id) == current or g.name.startswith(current)
-        ]
+        ][:25]
 
     async def transform(self, interaction: discord.Interaction, value: str, /) -> Optional[discord.Guild]:
         try:
