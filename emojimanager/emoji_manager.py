@@ -97,7 +97,7 @@ class EmojiManager(commands.Cog):
         for guild_id in await self.settings.emoji_server_ids():
             guild = ctx.bot.get_guild(guild_id)
             text = '\n'.join([f'{e} • `{e.id}`' for e in guild.emojis])
-            for i, page in enumerate(pagify(text, page_length=1000, shorten_by=0)):
+            for i, page in enumerate(pagify(text, page_length=1024, shorten_by=0)):
                 title = f'**{guild}**:' if i == 0 else f'**{guild}** (continued):'
                 embed.add_field(name=title, value=page)
         await ctx.send(embed=embed)
@@ -164,7 +164,7 @@ class EmojiManager(commands.Cog):
         embed.title = 'Emoji Server'
         embed.description = '\n'.join([
             f'{g.name} • `{g.id}` '
-            f'[{len([e for e in g.emojis if not e.animated])} / 50 | {len([e for e in g.emojis if e.animated])} / 50]'
+            f'[{len([e for e in g.emojis if not e.animated])}/50 | {len([e for e in g.emojis if e.animated])}/50]'
             for g in guilds
         ])
         await ctx.send(embed=embed)
