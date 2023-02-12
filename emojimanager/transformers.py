@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class EmojiTransformer(app_commands.Transformer):
 
     async def autocomplete(self, interaction: discord.Interaction, current: str, /) -> List[app_commands.Choice[str]]:
-        cog: "EmojiManager" = interaction.client.get_emoji("EmojiManager")  # type: ignore
+        cog: "EmojiManager" = interaction.client.get_cog("EmojiManager")  # type: ignore
         guild_ids = cog.settings.emoji_server_ids()
         return [
             app_commands.Choice(name=e.name, value=str(e.id))
