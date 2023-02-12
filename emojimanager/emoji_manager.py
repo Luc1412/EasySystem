@@ -6,9 +6,11 @@ from redbot.core import Config, checks
 from redbot.core.commands import commands, Context
 from redbot.core.utils.chat_formatting import pagify
 
+from emojimanager.transformers import GuildTransformer, EmojiTransformer
+
 
 class EmojiManager(commands.Cog):
-    """This cog manages emojimanager on bot-owned guild, to don't waste your support server slots."""
+    """This cog manages emoji on bot-owned guild, to don't waste your support server slots."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -17,24 +19,6 @@ class EmojiManager(commands.Cog):
             'emoji_server_ids': []
         }
         self.settings.register_global(**default_global_settings)
-
-    async def _get_guild(self, for_animated: bool) -> discord.Guild:
-        guild_ids = await self.settings.emoji_server_ids()
-        for guild_id in guild_ids:
-            guild = self.bot.get_guild(guild_id)
-            emojis = len([e.id for e in guild.emojis if not e.animated])
-            animated_emojis = len([e.id for e in guild.emojis if e.animated])
-            if (animated_emojis if for_animated else emojis) < 50:
-                return guild
-
-    async def _get_emoji_names(self):
-        guild_ids = await self.settings.emoji_server_ids()
-        names = []
-        for guild_id in guild_ids:
-            guild = self.bot.get_guild(guild_id)
-            for emoji in guild.emojis:
-                names.append(emoji.name.lower())
-        return names
 
     @commands.hybrid_group(name='emoji')
     @app_commands.default_permissions()
@@ -50,8 +34,7 @@ class EmojiManager(commands.Cog):
 
         if name.lower() in await self._get_emoji_names():
             embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = f'A emojimanager with the name already exits.\n' \
-                                f'> **Name:** {name}'
+            embed.description = f'A emoji with the name already exits.'
             return await ctx.send(embed=embed)
         emoji_guild = await self._get_guild(is_animated)
         if not emoji_guild:
@@ -71,36 +54,39 @@ class EmojiManager(commands.Cog):
 
         message = discord.Embed(colour=discord.Color.green())
         message.set_thumbnail(url=emoji.url)
-        message.description = f'Successfully added emojimanager.\n' \
+        message.description = f'Successfully added emoji.\n' \
                               f'> **Name:** {emoji.name}\n' \
                               f'> **ID:** {emoji.id}'
         await ctx.send(embed=message)
 
     @_emoji.command(name='remove')
-    async def _emoji_remove(self, ctx: Context, id_: int):
+    async def _emoji_remove(
+            self,
+            ctx: Context,
+            emoji: app_commands.Transform[Optional[discord.Emoji], EmojiTransformer]
+    ):
         """Remove an emoji from an emoji server."""
-        emoji = ctx.bot.get_emoji(id_)
         if not emoji:
             embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = 'The emojimanager wasn\'t found.'
+            embed.description = 'The emoji wasn\'t found.'
             return await ctx.send(embed=embed)
         guild_ids = await self.settings.emoji_server_ids()
         if emoji.guild.id in guild_ids:
             embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = 'The emojimanager isn\'t owned by a Emoji Server.'
+            embed.description = 'The emoji isn\'t an emoji managed by this server.'
             return await ctx.send(embed=embed)
         await emoji.delete()
 
         message = discord.Embed(colour=discord.Colour.dark_blue())
         message.set_thumbnail(url=emoji.url)
-        message.description = f'Successfully deleted emojimanager.\n' \
+        message.description = f'Successfully deleted emoji.\n' \
                               f'> **Name:** {emoji.name}\n' \
                               f'> **ID:** {emoji.id}'
         await ctx.send(embed=message)
 
     @_emoji.command(name='list')
     async def _emoji_list(self, ctx: Context):
-        """List all emojis on all emojimanager servers."""
+        """List all emojis on all emoji servers."""
         embed = discord.Embed(colour=discord.Color.dark_magenta())
         embed.title = 'Emojis'
         for guild_id in await self.settings.emoji_server_ids():
@@ -117,11 +103,12 @@ class EmojiManager(commands.Cog):
         """Set up the emoji manager."""
         pass
 
-    @_emoji_settings.command(name='add-server')
-    async def _emoji_settings_add_server(
+    @_emoji_settings.command(name='add')
+    @app_commands.describe(guild='The guild to add as emoji server.')
+    async def _emoji_settings_add(
             self,
             ctx: Context,
-            guild: app_commands.Transform[Optional[discord.Guild], "GuildAddTransformer"]
+            guild: app_commands.Transform[Optional[discord.Guild], GuildTransformer]
     ):
         """Add a emoji guild."""
         if not guild:
@@ -134,89 +121,66 @@ class EmojiManager(commands.Cog):
         await self.settings.emoji_server_ids.set(guild_ids)
 
         message = discord.Embed(colour=discord.Colour.green())
-        message.description = f'Successfully added guild as emojimanager server.\n' \
+        message.description = f'Successfully added guild as emoji server.\n' \
                               f'> **Name:** {guild.name}\n' \
                               f'> **ID:** {guild.id}'
         await ctx.send(embed=message)
 
     @_emoji_settings.command(name='remove')
-    @app_commands.describe(guild_id='The ID of the guild.')
-    @app_commands.rename(guild_id='guild-id')
-    async def _emoji_settings_remove_guild(self, ctx: Context, guild_id: str):
-        """Remove a emojimanager guild."""
-        guild = ctx.bot.get_guild(guild_id)
+    @app_commands.describe(guild='The guild to remove.')
+    async def _emoji_settings_remove(
+            self,
+            ctx: Context,
+            guild: app_commands.Transform[Optional[discord.Guild], GuildTransformer]
+    ):
+        """Remove an emoji guild."""
         if not guild:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The bot isn\'t on the guild.'
             return await ctx.send(embed=embed)
         guild_ids = await self.settings.emoji_server_ids()
-        if guild_id not in guild_ids:
+        if guild.id not in guild_ids:
             embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = 'The guild is no emojimanager server.'
+            embed.description = 'The guild is no emoji server.'
             return await ctx.send(embed=embed)
 
         guild_ids.remove(guild.id)
         await self.settings.emoji_server_ids.set(guild_ids)
 
         message = discord.Embed(colour=discord.Colour.green())
-        message.description = f'Successfully removed guild as emojimanager server.\n' \
+        message.description = f'Successfully removed guild as emoji server.\n' \
                               f'> **Name:** {guild.name}\n' \
                               f'> **ID:** {guild.id}'
         await ctx.send(embed=message)
 
-    @_emojiset.command(name='list')
-    async def _emojiset_list(self, ctx: Context):
-        """List all emojimanager guilds."""
+    @_emoji_settings.command(name='list')
+    async def _emoji_settings_list(self, ctx: Context):
+        """List all emoji guilds."""
         guild_ids = await self.settings.emoji_server_ids()
         guilds = [ctx.bot.get_guild(gid) for gid in guild_ids]
         embed = discord.Embed(colour=discord.Color.dark_magenta())
         embed.title = 'Emoji Server'
-        embed.description = '\n'.join([f'{g.name} • `{g.id}`' for g in guilds])
+        embed.description = '\n'.join([
+            f'{g.name} • `{g.id}` '
+            f'[{len([e for e in g.emojis if not e.animated])} / 50 | {len([e for e in g.emojis if e.animated])} / 50]'
+            for g in guilds
+        ])
         await ctx.send(embed=embed)
 
+    async def _get_guild(self, for_animated: bool) -> discord.Guild:
+        guild_ids = await self.settings.emoji_server_ids()
+        for guild_id in guild_ids:
+            guild = self.bot.get_guild(guild_id)
+            emojis = len([e.id for e in guild.emojis if not e.animated])
+            animated_emojis = len([e.id for e in guild.emojis if e.animated])
+            if (animated_emojis if for_animated else emojis) < 50:
+                return guild
 
-class GuildAddTransformer(app_commands.Transformer):
-
-    async def autocomplete(self, interaction: discord.Interaction, current: str, /) -> List[app_commands.Choice[str]]:
-        emoji_manager_cog: "EmojiManager" = interaction.client.get_cog('EmojiManager')
-        guild_ids = await emoji_manager_cog.settings.emoji_server_ids()
-        return [
-            app_commands.Choice(name=g.name, value=g.id)
-            for g in interaction.client.guilds
-            if g.id not in guild_ids and g.name.startswith(current)
-        ]
-
-    async def transform(self, interaction: discord.Interaction, value: str, /) -> Optional[discord.Guild]:
-        emoji_manager_cog: "EmojiManager" = interaction.client.get_cog('EmojiManager')
-        guild_ids = await emoji_manager_cog.settings.emoji_server_ids()
-
-        try:
-            guild_id = int(value)
-            if guild_id in guild_ids:
-                return None
-            return interaction.client.get_guild(guild_id)
-        except ValueError:
-            return None
-
-class GuildRemoveTransformer(app_commands.Transformer):
-
-    async def autocomplete(self, interaction: discord.Interaction, current: str, /) -> List[app_commands.Choice[str]]:
-        emoji_manager_cog: "EmojiManager" = interaction.client.get_cog('EmojiManager')
-        guild_ids = await emoji_manager_cog.settings.emoji_server_ids()
-        return [
-            app_commands.Choice(name=g.name, value=g.id)
-            for g in interaction.client.guilds
-            if g.id not in guild_ids and g.name.startswith(current) or
-        ]
-
-    async def transform(self, interaction: discord.Interaction, value: str, /) -> Optional[discord.Guild]:
-        emoji_manager_cog: "EmojiManager" = interaction.client.get_cog('EmojiManager')
-        guild_ids = await emoji_manager_cog.settings.emoji_server_ids()
-
-        try:
-            guild_id = int(value)
-            if guild_id in guild_ids:
-                return None
-            return interaction.client.get_guild(guild_id)
-        except ValueError:
-            return None
+    async def _get_emoji_names(self) -> List[str]:
+        guild_ids = await self.settings.emoji_server_ids()
+        names = []
+        for guild_id in guild_ids:
+            guild = self.bot.get_guild(guild_id)
+            for emoji in guild.emojis:
+                names.append(emoji.name.lower())
+        return names
