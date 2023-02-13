@@ -70,7 +70,7 @@ class Update(commands.Cog):
         update_embed.description = modal.text_input.value
         if image_file:
             update_embed.set_image(url=f'attachment://{image_file.filename}')
-        if icon_url := self.settings.channel(channel).icon_url():
+        if icon_url := await self.settings.channel(channel).icon_url():
             update_embed.set_thumbnail(url=icon_url)
 
         mention = None
