@@ -162,11 +162,16 @@ class EmojiManager(commands.Cog):
         guilds = [ctx.bot.get_guild(gid) for gid in guild_ids]
         embed = discord.Embed(colour=discord.Color.dark_magenta())
         embed.title = 'Emoji Server'
-        embed.description = '\n'.join([
-            f'{g.name} • `{g.id}` '
-            f'[{len([e for e in g.emojis if not e.animated])}/50 | {len([e for e in g.emojis if e.animated])}/50]'
-            for g in guilds
-        ])
+        rows = []
+        for guild in guilds:
+            invites = await guild.invites()
+            invite = invites[0] if invites else None
+            if not invite:
+                await guild.channels[0].create_invite()
+            normal_emojis = len([e for e in guild.emojis if not e.animated])
+            animated_emojis = len([e for e in guild.emojis if e.animated])
+            rows.append(f'[{guild.name}]({invite.url}) **•** `{guild.id}` [{normal_emojis}/50 | {animated_emojis}/50]')
+        embed.description = '\n'.join(rows)
         await ctx.send(embed=embed)
 
     @commands.Cog.listener('on_member_join')
