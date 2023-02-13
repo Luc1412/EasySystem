@@ -226,10 +226,10 @@ class Update(commands.Cog):
                 continue
             role = ctx.guild.get_role(data['role_id'])
             embed.add_field(
-                name=f'**{channel.mention}**',
+                name=f'**#{channel.name}**',
                 value=f'> **Emoji:** {ctx.bot.get_emoji(data["emoji_id"])}\n'
-                      f'> **Image URL:** {data["icon_url"] or ":x:"}\n'
-                      f'> **Role:** {role.mention if role else ":x:"}',
+                      f'> **Image URL:** {data["icon_url"] or "None"}\n'
+                      f'> **Role:** {role.mention if role else "None"}',
                 inline=False
             )
         await ctx.send(embed=embed)
