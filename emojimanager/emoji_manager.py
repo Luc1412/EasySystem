@@ -176,16 +176,12 @@ class EmojiManager(commands.Cog):
 
     @commands.Cog.listener('on_member_join')
     async def _on_emoji_server_join(self, member: discord.Member):
-        print('member join')
-        if not self.bot.is_owner(member):
-            print('not owner')
+        if not await self.bot.is_owner(member):
             return
         guild_ids = await self.settings.emoji_server_ids()
         if member.guild.id not in guild_ids:
-            print('is not emoji server')
             return
         roles = [r for r in member.guild.roles if r.is_assignable()]
-        print('add roles', roles)
         await member.add_roles(*roles)
 
     async def _get_guild(self, for_animated: bool) -> discord.Guild:
