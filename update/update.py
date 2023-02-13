@@ -81,8 +81,9 @@ class Update(commands.Cog):
             mention = '@everyone'
 
         view = UpdateConfirmView()
+        extra_payload = {'file': image_file} if image_file else {}
         await modal.interaction.response.send_message(
-            'Do you want to send the update message?', embed=update_embed, file=image_file, view=view
+            'Do you want to send the update message?', embed=update_embed, view=view, **extra_payload
         )
 
         if await view.wait():
@@ -92,7 +93,7 @@ class Update(commands.Cog):
 
         message = await channel.send(
             content=mention, embed=update_embed, allowed_mentions=discord.AllowedMentions(everyone=True, roles=True),
-            file=image_file
+            **extra_payload
         )
         emoji_id = await self.settings.channel(channel).emoji_id()
         if emoji_id and ctx.bot.get_emoji(emoji_id):
