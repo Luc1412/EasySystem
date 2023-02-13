@@ -59,8 +59,7 @@ class Update(commands.Cog):
         modal = UpdateModal()
         await ctx.interaction.response.send_modal(modal)
 
-        if not await modal.wait():
-            await ctx.channel.send('modal timed out')
+        if await modal.wait():
             return
 
         image_file = await image.to_file() if image else None
@@ -85,9 +84,8 @@ class Update(commands.Cog):
         await modal.interaction.response.send_message(
             'Do you want to send the update message?', embed=update_embed, file=image_file, view=view
         )
-        await ctx.channel.send('sent view')
 
-        if not await view.wait():
+        if await view.wait():
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The confirmation timed out and the update message was not sent.'
             return await modal.interaction.edit_original_response(content=None, embed=embed, attachments=[], view=None)
@@ -143,7 +141,7 @@ class Update(commands.Cog):
         modal = UpdateModal(update_embed.title, update_embed.description)
         await ctx.interaction.response.send_modal(modal)
 
-        if not await modal.wait():
+        if await modal.wait():
             return
 
         image_file = await image.to_file() if image else None

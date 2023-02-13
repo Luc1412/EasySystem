@@ -14,7 +14,6 @@ class UpdateModal(discord.ui.Modal, title='Update'):
         self.text_input.default = text
 
     async def on_submit(self, interaction: discord.Interaction, /) -> None:
-        await interaction.channel.send('Submitted')
         self.interaction = interaction
 
 
