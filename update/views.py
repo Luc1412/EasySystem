@@ -24,6 +24,6 @@ class UpdateConfirmView(discord.ui.View):
         super().__init__(timeout=5 * 60)
 
     @discord.ui.button(label='Confirm', style=discord.ButtonStyle.green)
-    async def confirm(self, button: discord.ui.Button, interaction: discord.Interaction, /) -> None:
+    async def confirm(self, interaction: discord.Interaction, buttons: discord.ui.Button) -> None:
         self.interaction = interaction
         self.stop()
