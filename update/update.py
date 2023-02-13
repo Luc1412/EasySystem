@@ -13,9 +13,6 @@ if TYPE_CHECKING:
 
 
 class Update(commands.Cog):
-    """
-
-    """
 
     def __init__(self, bot: "Red"):
         self.bot: "Red" = bot
@@ -63,6 +60,7 @@ class Update(commands.Cog):
         await ctx.interaction.response.send_modal(modal)
 
         if not await modal.wait():
+            await ctx.channel.send('modal timed out')
             return
 
         image_file = await image.to_file() if image else None
@@ -87,6 +85,7 @@ class Update(commands.Cog):
         await modal.interaction.response.send_message(
             'Do you want to send the update message?', embed=update_embed, file=image_file, view=view
         )
+        await ctx.channel.send('sent view')
 
         if not await view.wait():
             embed = discord.Embed(colour=discord.Colour.dark_red())
