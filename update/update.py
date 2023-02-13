@@ -49,8 +49,6 @@ class Update(commands.Cog):
             mention_type: app_commands.Choice[int],
             image: Optional[discord.Attachment] = None
     ):
-        """Sends a update message to the selected channel with the selected parameters"""
-
         if mention_type.value == 1 and not await self.settings.channel(channel).role_id():
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = f'You selected to mention a role but no role is set for the channel.'
@@ -168,7 +166,7 @@ class Update(commands.Cog):
         embed.description = f'The update message was successfully edited.'
         await modal.interaction.response.send_message(embed=embed)
 
-    @commands.group(name='update-settings')
+    @commands.hybrid_group(name='update-settings')
     @checks.admin_or_permissions(manage_guild=True)
     async def _update_settings(self, ctx: Context):
         """Update configuration options."""
@@ -213,17 +211,15 @@ class Update(commands.Cog):
                             f'> **Emoji:** {emoji}'
         return await ctx.send(embed=embed)
 
-    @_update_settings.command(name='clear')
+    @_update_settings.command(name='clear', description='Clears the settings for a update channel.')
     async def _update_settings_clear(self, ctx: Context, channel: discord.TextChannel):
-        """Clears the settings for a update channel."""
         await self.settings.channel(channel).clear()
         embed = discord.Embed(colour=discord.Colour.green())
         embed.description = f'The settings for the update channel have been cleared.'
         return await ctx.send(embed=embed)
 
-    @_update_settings.command(name='list')
+    @_update_settings.command(name='list', description='List all settings for all update channels.')
     async def _update_settings_list(self, ctx: Context):
-        """List all update channels"""
         embed = discord.Embed(color=discord.Colour.dark_magenta())
         embed.title = 'Update Channels'
         for channel_id, data in (await self.settings.all_channels()).items():
