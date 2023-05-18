@@ -66,10 +66,10 @@ class Suggestions(commands.Cog):
             await ctx.send(embed=embed, ephemeral=True)
 
         thread_name = ctx.channel.name.replace('Pending', 'Approved' if approved else 'Denied')
-        await ctx.channel.edit(name=thread_name, locked=True)
+        await ctx.channel.edit(name=thread_name, archived=True, locked=True)
 
         embed = discord.Embed(colour=discord.Colour.green() if approved else discord.Colour.red())
-        embed.description = f'This suggestion has been {"approved" if approved else "denied"}.'
+        embed.description = f'# This suggestion has been {"approved" if approved else "denied"}.'
         await ctx.send(embed=embed)
 
     @commands.Cog.listener('on_message')
