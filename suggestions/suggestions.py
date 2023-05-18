@@ -65,8 +65,10 @@ class Suggestions(commands.Cog):
             embed.description = f'You can only use this command in a suggestion thread.'
             await ctx.send(embed=embed, ephemeral=True)
 
+        emoji = await self.settings.guild(ctx.guild).upvote_emoji() if approved else \
+            await self.settings.guild(ctx.guild).downvote_emoji()
         embed = discord.Embed(colour=discord.Colour.green() if approved else discord.Colour.red())
-        embed.description = f'# This suggestion has been {"approved" if approved else "denied"}.'
+        embed.description = f'## {emoji} This suggestion has been {"approved" if approved else "denied"}.'
         await ctx.send(embed=embed)
 
         await ctx.channel.edit(
