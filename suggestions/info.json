@@ -1,0 +1,6 @@
+{
+  "author": ["Lucas Hardt (Luc1412#1412)"],
+  "description": "Manage suggestions for your server",
+  "min_python_version": [3, 9, 0],
+  "tags": ["suggestions", "suggestion", "suggestionsystem", "suggestion system"]
+}
