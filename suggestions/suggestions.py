@@ -74,7 +74,7 @@ class Suggestions(commands.Cog):
 
     @commands.Cog.listener('on_message')
     async def _on_message(self, message: discord.Message):
-        if not message.guild or not message.author.bot:
+        if not message.guild or message.author.bot:
             return
         channel_id = await self.settings.guild(message.guild).channel_id()
         if not channel_id or message.channel.id != channel_id:
