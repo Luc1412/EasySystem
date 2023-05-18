@@ -49,6 +49,26 @@ class Suggestions(commands.Cog):
         embed.description = f'Upvote emoji set to {upvote_emoji} and downvote emoji set to {downvote_emoji}'
         await ctx.send(embed=embed)
 
+    @_suggest_settings.command(name='approve', description='Approve a suggestion.')
+    async def _suggest_settings_approve(self, ctx: commands.Context):
+        await self.finalize_suggestion(ctx, True)
+
+    @_suggest_settings.command(name='deny', description='Deny a suggestion.')
+    @app_commands.describe(message='The suggestion to deny.')
+    async def _suggest_settings_deny(self, ctx: commands.Context, message: discord.Message):
+        await self.finalize_suggestion(ctx, False)
+
+    async def finalize_suggestion(self, ctx: commands.Context, approved: bool):
+        # Check if message is in a thread, which channel is the suggestion channel.
+        channel_id = await self.settings.guild(ctx.guild).channel_id()
+        if not isinstance(ctx.channel, discord.Thread) or ctx.channel.parent.id != channel_id:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = f'You can only use this command in a suggestion thread.'
+            await ctx.send(embed=embed, ephemeral=True)
+
+        thread_name = ctx.channel.name.replace('Pending', 'Approved' if approved else 'Denied')
+        await ctx.channel.edit(name=thread_name, locked=True)
+
     @commands.Cog.listener('on_message')
     async def _on_message(self, message: discord.Message):
         if not message.guild and not message.author.bot:
@@ -62,6 +82,7 @@ class Suggestions(commands.Cog):
         if len(message.content) < 25 or len(message.content.split()) < 3:
             await message.delete()
             embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.title = 'Your suggestion has been automatically denied'
             embed.description = f'Your suggestion has to be at least 25 characters long and have at least 3 words.'
             with suppress(discord.Forbidden):
                 await message.author.send(embed=embed)
