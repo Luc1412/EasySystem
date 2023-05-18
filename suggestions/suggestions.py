@@ -21,7 +21,7 @@ class Suggestions(commands.Cog):
         }
         self.settings.register_guild(**default_guild_settings)
 
-    @commands.group(name='suggestions-settings', description='Manage suggestions settings.')
+    @commands.hybrid_group(name='suggestions-settings', description='Manage suggestions settings.')
     @commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
     async def _suggest_settings(self, ctx: commands.Context):
