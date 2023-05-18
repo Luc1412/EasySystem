@@ -54,8 +54,7 @@ class Suggestions(commands.Cog):
         await self.finalize_suggestion(ctx, True)
 
     @_suggest_settings.command(name='deny', description='Deny a suggestion.')
-    @app_commands.describe(message='The suggestion to deny.')
-    async def _suggest_settings_deny(self, ctx: commands.Context, message: discord.Message):
+    async def _suggest_settings_deny(self, ctx: commands.Context):
         await self.finalize_suggestion(ctx, False)
 
     async def finalize_suggestion(self, ctx: commands.Context, approved: bool):
@@ -68,6 +67,10 @@ class Suggestions(commands.Cog):
 
         thread_name = ctx.channel.name.replace('Pending', 'Approved' if approved else 'Denied')
         await ctx.channel.edit(name=thread_name, locked=True)
+
+        embed = discord.Embed(colour=discord.Colour.green() if approved else discord.Colour.red())
+        embed.description = f'This suggestion has been {"approved" if approved else "denied"}.'
+        await ctx.send(embed=embed)
 
     @commands.Cog.listener('on_message')
     async def _on_message(self, message: discord.Message):
