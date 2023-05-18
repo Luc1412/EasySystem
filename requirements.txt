@@ -1,1 +1,1 @@
-git+https://github.com/Cog-Creators/Red-DiscordBot.git#egg=Red-DiscordBot
+Red-DiscordBot==3.5.2
