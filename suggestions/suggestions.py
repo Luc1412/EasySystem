@@ -2,10 +2,7 @@ from contextlib import suppress
 from typing import TYPE_CHECKING
 
 import discord
-from discord.app_commands import guild_only
-from discord.ext.commands import guild_only
-from redbot.core import Config, app_commands
-from redbot.core.commands import commands
+from redbot.core import Config, app_commands, commands
 
 if TYPE_CHECKING:
     from redbot.core.bot import Red
@@ -25,7 +22,7 @@ class Suggestions(commands.Cog):
         self.settings.register_guild(**default_guild_settings)
 
     @commands.group(name='suggestions-settings', description='Manage suggestions settings.')
-    @guild_only()
+    @commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
     async def _suggest_settings(self, ctx: commands.Context):
         pass
