@@ -28,7 +28,7 @@ class Suggestions(commands.Cog):
         pass
 
     @_suggest_settings.command(name='channel', description='Set the channel where suggestions should be sent.')
-    @app_commands.describe(name='The channel where suggestions should be sent.')
+    @app_commands.describe(channel='The channel where suggestions should be sent.')
     async def _suggest_settings_channel(self, ctx: commands.Context, channel: discord.TextChannel):
         await self.settings.guild(ctx.guild).channel_id.set(channel.id)
 
