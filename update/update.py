@@ -28,6 +28,7 @@ class Update(commands.Cog):
         name='update', description='Sends a update message to the selected channel with the selected parameters'
     )
     @checks.admin_or_permissions(manage_guild=True)
+    @app_commands.default_permissions(manage_guild=True)
     @app_commands.describe(
         channel='The channel where the update message should be sent to.',
         mention_type='The type of mention that should be used.',
@@ -109,6 +110,7 @@ class Update(commands.Cog):
 
     @commands.hybrid_command(name='update-edit', description='Edits a update message.')
     @checks.admin_or_permissions(manage_guild=True)
+    @app_commands.default_permissions(manage_guild=True)
     @app_commands.describe(
         message='The message that should be edited.',
         image='The image that should be used for the update message.',
@@ -166,6 +168,7 @@ class Update(commands.Cog):
 
     @commands.hybrid_group(name='update-settings')
     @checks.admin_or_permissions(manage_guild=True)
+    @app_commands.default_permissions(manage_guild=True)
     async def _update_settings(self, ctx: Context):
         """Update configuration options."""
         pass
