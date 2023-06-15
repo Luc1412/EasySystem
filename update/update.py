@@ -149,6 +149,7 @@ class Update(commands.Cog):
 
         update_embed.title = modal.title_input.value
         update_embed.description = modal.text_input.value
+        update_embed.colour = await self.bot.get_embed_colour(ctx)
         if image_file:
             update_embed.set_image(url=f'attachment://{image_file.filename}')
         if clear_image:
