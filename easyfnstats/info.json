@@ -1,0 +1,9 @@
+{
+  "author": ["Lucas Hardt (Luc1412#1412)"],
+  "description": "Cog that manages stuff for the EasyFortniteStats Discord Bot",
+  "install_msg": "",
+  "short": "",
+  "end_user_data_statement": "",
+  "min_python_version": [3, 8, 0],
+  "requirements": []
+}
