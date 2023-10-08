@@ -1,37 +1,33 @@
+import difflib
 import re
 from contextlib import suppress
-from datetime import datetime
-from typing import List
+from datetime import datetime, timezone
+from typing import List, Optional
 
 import discord
-from discord.ext.commands import ColourConverter
-from redbot.core import Config
-from redbot.core.commands import commands, Context
-
-BaseCog = getattr(commands, "Cog", object)
+from redbot.core import Config, app_commands
+from redbot.core.bot import Red
+from redbot.core.commands import commands
 
 
-class MessageLink(BaseCog):
-    """"""
-
+class MessageLink(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: "Red" = bot
+
         self.settings = Config.get_conf(self, 2187637202)
-        default_guild_settings = {
-            "linked_messages": []
-        }
+        default_guild_settings = {'linked_messages': []}
         # {
-        #     "name": "",
-        #     "origin_messages": [
-        #         "channel_id": 08324,
-        #         "id": 903429,
+        #     'name': '',
+        #     'origins': [
+        #         'channel_id': 08324,
+        #         'id': 903429,
         #     ],
-        #     "target_message_channel_id": 62739183,
-        #     "target_message_id": 213213189
+        #     'target_channel_id': 62739183,
+        #     'target_id': 213213189
         # }
         self.settings.register_guild(**default_guild_settings)
 
-    async def _get_by_origin(self, origin: discord.Message):
+    async def _get_by_origin(self, origin: discord.Message) -> Optional[dict]:
         linked_messages = await self.settings.guild(origin.guild).linked_messages()
         for linked_message in linked_messages:
             for message in linked_message['origins']:
@@ -39,15 +35,14 @@ class MessageLink(BaseCog):
                     return linked_message
         return None
 
-    async def _get_by_target(self, target: discord.Message):
+    async def _get_by_target(self, target: discord.Message) -> Optional[dict]:
         linked_messages = await self.settings.guild(target.guild).linked_messages()
         for linked_message in linked_messages:
-            if target.id == linked_message['target_id'] \
-                    and target.channel.id == linked_message['target_channel_id']:
+            if target.id == linked_message['target_id'] and target.channel.id == linked_message['target_channel_id']:
                 return linked_message
         return None
 
-    async def _execute_edit(self, target: discord.Message, origins: List[discord.Message]):
+    async def _execute_edit(self, target: discord.Message, origins: List[discord.Message]) -> None:
         data = '\n'.join(m.content for m in origins)
 
         embed_data = self._parse_data(data)
@@ -55,22 +50,25 @@ class MessageLink(BaseCog):
             return
 
         embed = discord.Embed()
-        with suppress(commands.BadArgument, IndexError):
-            formatted_colour = await ColourConverter().convert(None, embed_data.get('colour', ''))
-            embed.colour = formatted_colour
+        with suppress(ValueError):
+            embed.colour = discord.Colour.from_str(embed_data.get('colour', ''))
         if embed_data.get('author.text'):
-            embed.set_author(name=embed_data['author.name'],
-                             url=embed_data.get('author.name', discord.embeds.EmptyEmbed),
-                             icon_url=embed_data.get('author.icon', discord.embeds.EmptyEmbed))
-        embed.title = embed_data.get('title', discord.embeds.EmptyEmbed)
-        embed.description = embed_data.get('description', discord.embeds.EmptyEmbed)
+            embed.set_author(
+                name=embed_data['author.name'],
+                url=embed_data.get('author.name', None),
+                icon_url=embed_data.get('author.icon', None),
+            )
+        embed.title = embed_data.get('title', None)
+        embed.description = embed_data.get('description', None)
         if embed_data.get('thumbnail'):
             embed.set_thumbnail(url=embed_data['thumbnail'])
         if embed_data.get('image'):
             embed.set_image(url=embed_data['image'])
         if embed_data.get('footer.text'):
-            embed.set_footer(text=embed_data['footer.text'],
-                             icon_url=embed_data.get('footer.icon', discord.embeds.EmptyEmbed))
+            embed.set_footer(
+                text=embed_data['footer.text'],
+                icon_url=embed_data.get('footer.icon', None),
+            )
         if embed_data.get('fields'):
             fields = embed_data['fields']
             for i in range(1, 25):
@@ -78,28 +76,41 @@ class MessageLink(BaseCog):
                     continue
                 if not fields[i].get('name') or not fields[i].get('value'):
                     continue
-                embed.add_field(name=fields[i]['name'], value=fields[i]['value'], inline=fields[i].get('inline', True))
+                embed.add_field(
+                    name=fields[i]['name'],
+                    value=fields[i]['value'],
+                    inline=fields[i].get('inline', True),
+                )
 
         with suppress(TypeError):
-            embed.timestamp = datetime.utcfromtimestamp(int(embed_data.get('timestamp')))
+            embed.timestamp = datetime.fromtimestamp(int(embed_data.get('timestamp')), timezone.utc)
 
         await target.edit(content=None, embed=embed)
 
-    def _parse_data(self, data: str):
+    def _parse_data(self, data: str) -> Optional[dict]:
         embed_data = {}
-        regex = r'#(colour|' \
-                r'author\.name|author\.url|author\.icon|' \
-                r'title|' \
-                r'thumbnail|' \
-                r'description|' \
-                r'field\.(?:[1-9]|1[0-9]|2[0-5])\.name|field\.(?:[1-9]|1[0-9]|2[0-5])\.value|field\.(?:[1-9]|1[0-9]|2[0-5])\.inline|' \
-                r'image|' \
-                r'footer\.text|footer\.icon|' \
-                r'timestamp)#' \
-                r'(?: |)(.*)'
+        regex = re.compile(
+            r'#(colour|'
+            r'author\.name|'
+            r'author\.url|'
+            r'author\.icon|'
+            r'title|'
+            r'thumbnail|'
+            r'description|'
+            r'field\.(?:[1-9]|1[0-9]|2[0-5])\.name|'
+            r'field\.(?:[1-9]|1[0-9]|2[0-5])\.value|'
+            r'field\.(?:[1-9]|1[0-9]|2[0-5])\.inline|'
+            r'image|'
+            r'footer\.text|'
+            r'footer\.icon|'
+            r'timestamp'
+            r')#(?: |)(.*)',
+            re.IGNORECASE | re.MULTILINE,
+        )
+
         current = None
         for line in data.split('\n'):
-            results = re.findall(regex, line, re.IGNORECASE | re.MULTILINE)
+            results = regex.findall(line)
             if len(results) == 0:
                 if not current:
                     continue
@@ -136,13 +147,13 @@ class MessageLink(BaseCog):
         if not data:
             return
 
-        origin_messages = []
+        origins = []
         for origin in data['origins']:
             origin_channel = self.bot.get_channel(origin['channel_id'])
             if not origin_channel:
                 continue
             with suppress(discord.NotFound):
-                origin_messages.append(await origin_channel.fetch_message(origin['id']))
+                origins.append(await origin_channel.fetch_message(origin['id']))
 
         target_channel = self.bot.get_channel(data['target_channel_id'])
         if not target_channel:
@@ -152,111 +163,181 @@ class MessageLink(BaseCog):
         except discord.NotFound:
             return
 
-        await self._execute_edit(target_message, origin_messages)
+        await self._execute_edit(target_message, origins)
 
-    @commands.group(name='mlink')
-    async def _mlink(self, ctx: Context):
-        """"""
+    @commands.hybrid_group(name='message-link', description='Manage message links.')
+    async def _message_link(self, ctx: commands.Context):
         pass
 
-    @_mlink.command(name='add')
-    async def mlink_add(self, ctx: Context, target: discord.Message, origin: discord.Message, *, name: str = None):
-        """"""
-        if await self._get_by_origin(origin):
+    async def _message_link_name_autocomplete(
+        self, interaction: discord.Interaction, current: str
+    ) -> List[app_commands.Choice[str]]:
+        linked_messages = await self.settings.guild(interaction.guild).linked_messages()
+        names = [lm['name'] for lm in linked_messages]
+        return [app_commands.Choice(name=n, value=n) for n in difflib.get_close_matches(current.lower(), names, 25)]
+
+    @_message_link.command(name='add', description='Adds a message link.')
+    @app_commands.describe(
+        name='The name of the message link.',
+        origin_message='The message to link from.',
+        target_message='The message to link to.',
+        target_channel='The channel to link to. If provided, a new message will be sent in this channel.',
+    )
+    @app_commands.rename(
+        origin_message='origin-message', target_message='target-message', target_channel='target-channel'
+    )
+    @app_commands.autocomplete(name=_message_link_name_autocomplete)
+    async def _message_link_add(
+        self,
+        ctx: commands.Context,
+        name: str,
+        origin_message: discord.Message,
+        target_message: Optional[discord.Message] = None,
+        target_channel: Optional[discord.TextChannel] = None,
+    ):
+        if await self._get_by_origin(origin_message):
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The origin message is already linked.'
             return await ctx.send(embed=embed)
-        if target.author.id != ctx.bot.user.id:
+        if target_message and target_channel:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = 'You can\'t provide both a target message and a target channel.'
+            return await ctx.send(embed=embed)
+        if target_message and target_message.author is not ctx.bot.user:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The target message has to sent by the bot.'
             return await ctx.send(embed=embed)
-        if not origin.content:
-            embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = 'The origin message can\'t be empty.'
+
+        linked_messages = await self.settings.guild(origin_message.guild).linked_messages()
+        if not target_message and not target_channel:
+            name_match = [i for i in linked_messages if i['name'].lower() == name.lower()]
+            if not name_match:
+                embed = discord.Embed(colour=discord.Colour.dark_red())
+                embed.description = 'If you don\'t provide a target message or channel, you have to provide a name to append a new origin message to.'
+                return await ctx.send(embed=embed)
+            index = linked_messages.index(name_match[0])
+            linked_messages[index]['origins'].append({'channel_id': origin_message.channel.id, 'id': origin_message.id})
+
+            target_channel = self.bot.get_channel(linked_messages[index]['target_channel_id'])
+            if not target_channel:
+                linked_messages.pop(index)
+                await self.settings.guild(origin_message.guild).linked_messages.set(linked_messages)
+                embed = discord.Embed(colour=discord.Colour.dark_red())
+                embed.description = 'The target channel is no longer available. Removing the message link.'
+                return await ctx.send(embed=embed)
+
+            try:
+                target = await target_channel.fetch_message(linked_messages[index]['target_id'])
+            except discord.NotFound:
+                linked_messages.pop(index)
+                await self.settings.guild(origin_message.guild).linked_messages.set(linked_messages)
+                embed = discord.Embed(colour=discord.Colour.dark_red())
+                embed.description = 'The target message is no longer available. Removing the message link.'
+                return await ctx.send(embed=embed)
+
+            origins = []
+            for origin in linked_messages[index]['origins']:
+                origin_channel = self.bot.get_channel(origin['channel_id'])
+                if not origin_channel:
+                    linked_messages.pop(index)
+                    await self.settings.guild(origin_message.guild).linked_messages.set(linked_messages)
+                    embed = discord.Embed(colour=discord.Colour.dark_red())
+                    embed.description = 'One of the origin channels is no longer available. Removing the message link.'
+                    return await ctx.send(embed=embed)
+
+                try:
+                    origins.append(await origin_channel.fetch_message(origin['id']))
+                except discord.NotFound:
+                    linked_messages.pop(index)
+                    await self.settings.guild(origin_message.guild).linked_messages.set(linked_messages)
+                    embed = discord.Embed(colour=discord.Colour.dark_red())
+                    embed.description = 'One of the origin messages is no longer available. Removing the message link.'
+                    return await ctx.send(embed=embed)
+
+            await self._execute_edit(target, origins)
+
+            embed = discord.Embed(colour=discord.Colour.green())
+            embed.description = 'Successfully appended new origin message.'
             return await ctx.send(embed=embed)
 
-        linked_messages = await self.settings.guild(origin.guild).linked_messages()
-        existing_entry = await self._get_by_target(target)
-        origin_messages = []
-        if existing_entry:
-            index = linked_messages.index(existing_entry)
-            existing_entry['origins'].append({
-                'channel_id': origin.channel.id,
-                'id': origin.id
-            })
-            linked_messages[index] = existing_entry
+        if [lm for lm in linked_messages if lm['name'].lower() == name.lower()]:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = 'A message link with that name already exists.'
+            return await ctx.send(embed=embed)
 
-            for origin_m in existing_entry['origins']:
-                origin_channel = self.bot.get_channel(origin_m['channel_id'])
-                if not origin_channel:
-                    continue
-                with suppress(discord.NotFound):
-                    origin_messages.append(await origin_channel.fetch_message(origin_m['id']))
-        else:
-            linked_messages.append({
+        if self._get_by_target(target_message):
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = 'The target message is already linked.'
+            return await ctx.send(embed=embed)
+
+        linked_messages.append(
+            {
                 'name': name,
-                'origins': [{
-                    'channel_id': origin.channel.id,
-                    'id': origin.id
-                }],
-                'target_channel_id': target.channel.id,
-                'target_id': target.id
-            })
-            origin_messages.append(origin)
-        await self.settings.guild(origin.guild).linked_messages.set(linked_messages)
+                'origins': [{'channel_id': origin_message.channel.id, 'id': origin_message.id}],
+                'target_channel_id': target_message.channel.id,
+                'target_id': target_message.id,
+            }
+        )
+        await self.settings.guild(origin_message.guild).linked_messages.set(linked_messages)
 
-        await self._execute_edit(target, origin_messages)
+        await self._execute_edit(target_message, [origin_message])
 
         embed = discord.Embed(colour=discord.Colour.green())
         embed.description = 'Successfully linked messages.'
         return await ctx.send(embed=embed)
 
-    @_mlink.command(name='remove')
-    async def mlink_remove(self, ctx: Context, target: discord.Message):
-        """"""
-        data = await self._get_by_target(target)
-        if not data:
-            embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = 'The target message isn\'t linked.'
-            return await ctx.send(embed=embed)
+    @_message_link.command(name='remove', description='Removes a message link.')
+    @app_commands.describe(name='The name of the message link.')
+    @app_commands.autocomplete(name=_message_link_name_autocomplete)
+    async def _message_link_remove(self, ctx: commands.Context, name: str):
         linked_messages = await self.settings.guild(ctx.guild).linked_messages()
-        linked_messages.remove(data)
+        linked_message = [lm for lm in linked_messages if lm['name'].lower() == name.lower()]
+        if not linked_message:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = 'No message link with that name exists.'
+            return await ctx.send(embed=embed)
+
+        linked_messages.remove(linked_message[0])
         await self.settings.guild(ctx.guild).linked_messages.set(linked_messages)
 
         embed = discord.Embed(colour=discord.Colour.dark_blue())
         embed.description = 'Successfully unlinked message.'
         return await ctx.send(embed=embed)
 
-    @_mlink.command(name='list')
-    async def mlink_list(self, ctx: Context):
-        """"""
-        embed = discord.Embed(colour=discord.Color.dark_magenta())
-        embed.title = 'Linked Messages'
+    @_message_link.command(name='list', description='Lists all message links.')
+    async def _message_link_list(self, ctx: commands.Context):
         linked_messages = await self.settings.guild(ctx.guild).linked_messages()
+
         if len(linked_messages) < 1:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'No messages are linked.'
             return await ctx.send(embed=embed)
-        for entry in linked_messages:
-            target_channel = self.bot.get_channel(entry['target_channel_id'])
+
+        embed = discord.Embed(colour=discord.Color.dark_magenta())
+        embed.title = 'Linked Messages'
+        embed.description = ''
+
+        for linked_message in linked_messages:
+            target_channel = self.bot.get_channel(linked_message['target_channel_id'])
             try:
-                target_message = await target_channel.fetch_message(entry['target_id'])
+                target_message = await target_channel.fetch_message(linked_message['target_id'])
             except (discord.NotFound, AttributeError):
                 target_message = None
 
-            name = entry['name'] if entry.get('name') else f'Linked to #{target_channel if target_channel else "Not Found"}'
+            target_fmt = (
+                f'[Link]({target_message.jump_url}) ({target_channel.mention})' if target_message else 'Not Found'
+            )
+            embed.description = f'### {linked_message["name"]}\n' f'- **Target:** {target_fmt}\n'
 
-            value = f'**Target Channel:** {target_channel.mention if target_channel else "Not Found"}\n' \
-                    f'**Target Message:** {f"[Link]({target_message.jump_url})" if target_message else "Not Found"}'
-
-            for i, origin_data in enumerate(entry['origins']):
-                channel = self.bot.get_channel(origin_data['channel_id'])
+            for i, origin_data in enumerate(linked_message['origins'], 1):
+                origin_channel = self.bot.get_channel(origin_data['channel_id'])
                 try:
-                    message = await channel.fetch_message(origin_data['id'])
+                    origin_message = await origin_channel.fetch_message(origin_data['id'])
                 except (discord.NotFound, AttributeError):
-                    message = None
-                value += f'\n\n**Origin {i + 1} Channel:** {channel.mention if channel else "Not Found"}\n' \
-                         f'**Origin {i + 1} Message:** {f"[Link]({message.jump_url})" if message else "Not Found"}\n'
-
-            embed.add_field(name=name, value=value, inline=False)
+                    origin_message = None
+                origin_fmt = (
+                    f'[Link]({origin_message.jump_url}) ({origin_channel.mention})' if origin_message else 'Not Found'
+                )
+                embed.description += f'**Origin {i}:** {origin_fmt}\n'
 
         await ctx.send(embed=embed)
