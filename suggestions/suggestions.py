@@ -14,11 +14,7 @@ class Suggestions(commands.Cog):
     def __init__(self, bot: "Red"):
         self.bot: "Red" = bot
         self.settings = Config.get_conf(self, 54686776576)
-        default_guild_settings = {
-            'channel_id': None,
-            'upvote_emoji': '✅',
-            'downvote_emoji': '❌'
-        }
+        default_guild_settings = {'channel_id': None, 'upvote_emoji': '✅', 'downvote_emoji': '❌'}
         self.settings.register_guild(**default_guild_settings)
 
     @commands.hybrid_group(name='suggestions-settings', description='Manage suggestions settings.')
@@ -99,6 +95,3 @@ class Suggestions(commands.Cog):
             await message.delete()
             return
         await message.create_thread(name=f'Pending suggestion by {message.author}', auto_archive_duration=10080)
-
-
-

@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 
 class Update(commands.Cog):
-
     def __init__(self, bot: "Red"):
         self.bot: "Red" = bot
         self.settings: Config = Config.get_conf(self, 200912392)
@@ -32,20 +31,22 @@ class Update(commands.Cog):
     @app_commands.describe(
         channel='The channel where the update message should be sent to.',
         mention_type='The type of mention that should be used.',
-        image='The image that should be used for the update message.'
+        image='The image that should be used for the update message.',
     )
     @app_commands.rename(mention_type='mention-type')
-    @app_commands.choices(mention_type=[
-        app_commands.Choice(name='None', value=0),
-        app_commands.Choice(name='Role', value=1),
-        app_commands.Choice(name='Everyone', value=2)
-    ])
+    @app_commands.choices(
+        mention_type=[
+            app_commands.Choice(name='None', value=0),
+            app_commands.Choice(name='Role', value=1),
+            app_commands.Choice(name='Everyone', value=2),
+        ]
+    )
     async def _update(
-            self,
-            ctx: Context,
-            channel: discord.TextChannel,
-            mention_type: app_commands.Choice[int],
-            image: Optional[discord.Attachment] = None
+        self,
+        ctx: Context,
+        channel: discord.TextChannel,
+        mention_type: app_commands.Choice[int],
+        image: Optional[discord.Attachment] = None,
     ):
         if mention_type.value == 1 and not await self.settings.channel(channel).role_id():
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -93,8 +94,10 @@ class Update(commands.Cog):
             return await modal.interaction.edit_original_response(content=None, embed=embed, attachments=[], view=None)
 
         message = await channel.send(
-            content=mention, embed=update_embed, allowed_mentions=discord.AllowedMentions(everyone=True, roles=True),
-            **extra_payload
+            content=mention,
+            embed=update_embed,
+            allowed_mentions=discord.AllowedMentions(everyone=True, roles=True),
+            **extra_payload,
         )
         emoji_id = await self.settings.channel(channel).emoji_id()
         if emoji_id and ctx.bot.get_emoji(emoji_id):
@@ -114,15 +117,15 @@ class Update(commands.Cog):
     @app_commands.describe(
         message='The message that should be edited.',
         image='The image that should be used for the update message.',
-        clear_image='Whether the image should be cleared.'
+        clear_image='Whether the image should be cleared.',
     )
     @app_commands.rename(clear_image='clear-image')
     async def _update_edit(
-            self,
-            ctx: Context,
-            message: discord.Message,
-            clear_image: bool = False,
-            image: Optional[discord.Attachment] = None
+        self,
+        ctx: Context,
+        message: discord.Message,
+        clear_image: bool = False,
+        image: Optional[discord.Attachment] = None,
     ):
         if not len(message.embeds) == 1:
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -175,10 +178,7 @@ class Update(commands.Cog):
         pass
 
     @_update_settings.command(name='icon', description='Set the icon url for a update channel.')
-    @app_commands.describe(
-        channel='The channel for which the icon url should be set',
-        url='The url of the icon'
-    )
+    @app_commands.describe(channel='The channel for which the icon url should be set', url='The url of the icon')
     async def _update_settings_icon(self, ctx: Context, channel: discord.TextChannel, url: str):
         if not url.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
             embed = discord.Embed(colour=discord.Colour.dark_red())
@@ -186,8 +186,9 @@ class Update(commands.Cog):
             return await ctx.send(embed=embed)
         await self.settings.channel(channel).icon_url.set(url)
         embed = discord.Embed(colour=discord.Colour.green())
-        embed.description = f'The icon url for the channel has been successfully set.\n' \
-                            f'> **Channel:** {channel.mention}'
+        embed.description = (
+            f'The icon url for the channel has been successfully set.\n' f'> **Channel:** {channel.mention}'
+        )
         embed.set_thumbnail(url=url)
         return await ctx.send(embed=embed)
 
@@ -195,9 +196,11 @@ class Update(commands.Cog):
     async def _update_settings_role(self, ctx: Context, channel: discord.TextChannel, role: discord.Role):
         await self.settings.channel(channel).role_id.set(role.id)
         embed = discord.Embed(colour=discord.Colour.green())
-        embed.description = f'The mention role for the channel has been successfully set.\n' \
-                            f'> **Channel:** {channel.mention}\n' \
-                            f'> **Role:** {role.mention}'
+        embed.description = (
+            f'The mention role for the channel has been successfully set.\n'
+            f'> **Channel:** {channel.mention}\n'
+            f'> **Role:** {role.mention}'
+        )
         return await ctx.send(embed=embed)
 
     @_update_settings.command(name='emoji', description='Set the emoji for a update channel.')
@@ -208,9 +211,11 @@ class Update(commands.Cog):
             return await ctx.send(embed=embed)
         await self.settings.channel(channel).emoji_id.set(emoji.id)
         embed = discord.Embed(colour=discord.Colour.green())
-        embed.description = f'The emoji for the channel has been successfully set.\n' \
-                            f'> **Channel:** {channel.mention}\n' \
-                            f'> **Emoji:** {emoji}'
+        embed.description = (
+            f'The emoji for the channel has been successfully set.\n'
+            f'> **Channel:** {channel.mention}\n'
+            f'> **Emoji:** {emoji}'
+        )
         return await ctx.send(embed=embed)
 
     @_update_settings.command(name='clear', description='Clears the settings for a update channel.')
@@ -232,8 +237,8 @@ class Update(commands.Cog):
             embed.add_field(
                 name=f'**#{channel.name}**',
                 value=f'> **Emoji:** {ctx.bot.get_emoji(data["emoji_id"])}\n'
-                      f'> **Image URL:** {data["icon_url"] or "None"}\n'
-                      f'> **Role:** {role.mention if role else "None"}',
-                inline=False
+                f'> **Image URL:** {data["icon_url"] or "None"}\n'
+                f'> **Role:** {role.mention if role else "None"}',
+                inline=False,
             )
         await ctx.send(embed=embed)

@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 
 class EasyFnStats(commands.Cog):
-
     def __init__(self, bot: "Red"):
         self.bot: "Red" = bot
 
