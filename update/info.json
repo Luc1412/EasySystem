@@ -1,10 +1,6 @@
 {
   "author": ["Lucas Hardt (Luc1412#1412)"],
-  "description": "",
-  "install_msg": "",
-  "short": "",
-  "end_user_data_statement": "",
-  "min_python_version": [3, 6, 0],
-  "requirements": [],
-  "tags": []
+  "description": "A cog to manage announcements.",
+  "min_bot_version": "3.5.0",
+  "min_python_version": [3, 11, 0],
 }
