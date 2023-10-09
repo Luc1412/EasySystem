@@ -10,7 +10,7 @@ from redbot.core.bot import Red
 
 
 class MessageLink(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: "Red"):
         self.bot: "Red" = bot
 
         self.settings = Config.get_conf(self, 2187637202)
@@ -190,10 +190,29 @@ class MessageLink(commands.Cog):
         self,
         ctx: commands.Context,
         name: str,
-        origin_message: discord.Message,
-        target_message: Optional[discord.Message] = None,
+        origin_message: str,
+        target_message: Optional[str] = None,
         target_channel: Optional[discord.TextChannel] = None,
     ):
+        try:
+            origin_message = await commands.MessageConverter().convert(ctx, origin_message)
+        except commands.BadArgument:
+            embed = discord.Embed(colour=discord.Colour.dark_red())
+            embed.description = (
+                'The origin message could not be found. Enter a message link, or message ID (in the same channel).'
+            )
+            return await ctx.send(embed=embed)
+
+        if target_message:
+            try:
+                target_message = await commands.MessageConverter().convert(ctx, target_message)
+            except commands.BadArgument:
+                embed = discord.Embed(colour=discord.Colour.dark_red())
+                embed.description = (
+                    'The target message could not be found. Enter a message link, or message ID (in the same channel).'
+                )
+                return await ctx.send(embed=embed)
+
         if await self._get_by_origin(origin_message):
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The origin message is already linked.'
