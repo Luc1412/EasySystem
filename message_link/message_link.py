@@ -50,10 +50,10 @@ class MessageLink(commands.Cog):
         if embed_data.get('colour'):
             with suppress(ValueError):
                 embed.colour = discord.Colour.from_str(embed_data['colour'])
-        if embed_data.get('author.text'):
+        if embed_data.get('author.name'):
             embed.set_author(
                 name=embed_data['author.name'],
-                url=embed_data.get('author.name', None),
+                url=embed_data.get('author.url', None),
                 icon_url=embed_data.get('author.icon', None),
             )
         embed.title = embed_data.get('title', None)
@@ -167,6 +167,26 @@ class MessageLink(commands.Cog):
     @commands.hybrid_group(name='message-link', description='Manage message links.')
     async def _message_link(self, ctx: commands.Context):
         pass
+
+    @_message_link.command(name='template', description='Shows how to use message links.')
+    async def _message_link_template(self, ctx: commands.Context):
+        message = (
+            '`#colour#` Embed colour as `#RRGGBB`, `0xRRGGBB` or `rgb(R, G, B)`\n'
+            '`#author.name#` Embed author name\n'
+            '`#author.url#` Embed author URL (requires `author.name`)\n'
+            '`#author.icon#` Embed author icon URL (requires `author.name`)\n'
+            '`#title#` Embed title\n'
+            '`#description#` Embed description\n'
+            '`#thumbnail#` Embed thumbnail URL\n'
+            '`#image#` Embed image URL\n'
+            '`#footer.text#` Embed footer text\n'
+            '`#footer.icon#` Embed footer icon URL (requires `footer.text`)\n'
+            '`#field.x.name#` Embed field name. (Replace x with a number between 1 and 25)\n'
+            '`#field.x.value#` Embed field 1 value (fields require `field.x.name` and `field.x.value` to be set)\n'
+            '`#field.x.inline#` Embed field 1 inline (defaults to `true`)\n'
+            '`#timestamp#` Embed timestamp as Unix timestamp'
+        )
+        await ctx.send(message)
 
     async def _message_link_name_autocomplete(
         self, interaction: discord.Interaction, current: str
