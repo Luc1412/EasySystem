@@ -165,6 +165,7 @@ class MessageLink(commands.Cog):
         await target_message.edit(content=None, embed=embed)
 
     @commands.hybrid_group(name='message-link', description='Manage message links.')
+    @app_commands.default_permissions(manage_guild=True)
     async def _message_link(self, ctx: commands.Context):
         pass
 
@@ -244,7 +245,7 @@ class MessageLink(commands.Cog):
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'You can\'t provide both a target message and a target channel.'
             return await ctx.send(embed=embed)
-        if target_message and target_message.author is not ctx.bot.user:
+        if target_message and target_message.author.id is not ctx.bot.user.id:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The target message has to sent by the bot.'
             return await ctx.send(embed=embed)
