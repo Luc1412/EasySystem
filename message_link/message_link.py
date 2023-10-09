@@ -283,7 +283,7 @@ class MessageLink(commands.Cog):
             embed.description = 'A message link with that name already exists.'
             return await ctx.send(embed=embed)
 
-        if self._get_by_target(target_message):
+        if target_message and self._get_by_target(target_message):
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The target message is already linked.'
             return await ctx.send(embed=embed)
