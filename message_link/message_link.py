@@ -74,8 +74,10 @@ class MessageLink(commands.Cog):
                     continue
                 if not fields[i].get('name') or not fields[i].get('value'):
                     continue
-                with suppress(ValueError):
+                try:
                     inline = bool(fields[i].get('inline', True))
+                except ValueError:
+                    inline = True
                 embed.add_field(name=fields[i]['name'], value=fields[i]['value'], inline=inline)
 
         with suppress(ValueError, TypeError):
