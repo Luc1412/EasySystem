@@ -9,7 +9,7 @@ from redbot.core import Config, app_commands, commands
 from redbot.core.bot import Red
 
 
-class MessageLink(commands.Cog):
+class EmbedLink(commands.Cog):
     def __init__(self, bot: "Red"):
         self.bot: "Red" = bot
 
