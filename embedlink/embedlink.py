@@ -157,13 +157,13 @@ class EmbedLink(commands.Cog):
         embed = self.build_embed(origins)
         await target_message.edit(content=None, embed=embed)
 
-    @commands.hybrid_group(name='message-link', description='Manage message links.')
+    @commands.hybrid_group(name='embed-link', description='Manage message links.')
     @app_commands.default_permissions(manage_guild=True)
-    async def _message_link(self, ctx: commands.Context):
+    async def _embed_link(self, ctx: commands.Context):
         pass
 
-    @_message_link.command(name='template', description='Shows how to use message links.')
-    async def _message_link_template(self, ctx: commands.Context):
+    @_embed_link.command(name='template', description='Shows how to use message links.')
+    async def _embed_link_template(self, ctx: commands.Context):
         message = (
             '`#colour#` Embed colour as `#RRGGBB`, `0xRRGGBB` or `rgb(R, G, B)`\n'
             '`#author.name#` Embed author name\n'
@@ -182,7 +182,7 @@ class EmbedLink(commands.Cog):
         )
         await ctx.send(message)
 
-    async def _message_link_name_autocomplete(
+    async def _embed_link_name_autocomplete(
         self, interaction: discord.Interaction, current: str
     ) -> List[app_commands.Choice[str]]:
         linked_messages = await self.settings.guild(interaction.guild).linked_messages()
@@ -192,7 +192,7 @@ class EmbedLink(commands.Cog):
             for n in difflib.get_close_matches(current.lower(), names, 25, cutoff=0.0)
         ]
 
-    @_message_link.command(name='add', description='Adds a message link.')
+    @_embed_link.command(name='add', description='Adds a message link.')
     @app_commands.describe(
         name='The name of the message link.',
         origin_message='The message to link from.',
@@ -202,8 +202,8 @@ class EmbedLink(commands.Cog):
     @app_commands.rename(
         origin_message='origin-message', target_message='target-message', target_channel='target-channel'
     )
-    @app_commands.autocomplete(name=_message_link_name_autocomplete)
-    async def _message_link_add(
+    @app_commands.autocomplete(name=_embed_link_name_autocomplete)
+    async def _embed_link_add(
         self,
         ctx: commands.Context,
         name: str,
@@ -337,10 +337,10 @@ class EmbedLink(commands.Cog):
         embed.description = 'Successfully linked messages.'
         return await ctx.send(embed=embed)
 
-    @_message_link.command(name='remove', description='Removes a message link.')
+    @_embed_link.command(name='remove', description='Removes a message link.')
     @app_commands.describe(name='The name of the message link.')
-    @app_commands.autocomplete(name=_message_link_name_autocomplete)
-    async def _message_link_remove(self, ctx: commands.Context, name: str):
+    @app_commands.autocomplete(name=_embed_link_name_autocomplete)
+    async def _embed_link_remove(self, ctx: commands.Context, name: str):
         linked_messages = await self.settings.guild(ctx.guild).linked_messages()
         linked_message = [lm for lm in linked_messages if lm['name'].lower() == name.lower()]
         if not linked_message:
@@ -355,8 +355,8 @@ class EmbedLink(commands.Cog):
         embed.description = 'Successfully unlinked message.'
         return await ctx.send(embed=embed)
 
-    @_message_link.command(name='list', description='Lists all message links.')
-    async def _message_link_list(self, ctx: commands.Context):
+    @_embed_link.command(name='list', description='Lists all message links.')
+    async def _embed_link_list(self, ctx: commands.Context):
         linked_messages = await self.settings.guild(ctx.guild).linked_messages()
 
         if len(linked_messages) < 1:
