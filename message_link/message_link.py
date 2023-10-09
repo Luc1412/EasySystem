@@ -193,7 +193,10 @@ class MessageLink(commands.Cog):
     ) -> List[app_commands.Choice[str]]:
         linked_messages = await self.settings.guild(interaction.guild).linked_messages()
         names = [lm['name'] for lm in linked_messages]
-        return [app_commands.Choice(name=n, value=n) for n in difflib.get_close_matches(current.lower(), names, 25)]
+        return [
+            app_commands.Choice(name=n, value=n)
+            for n in difflib.get_close_matches(current.lower(), names, 25, cutoff=0.0)
+        ]
 
     @_message_link.command(name='add', description='Adds a message link.')
     @app_commands.describe(
@@ -373,7 +376,7 @@ class MessageLink(commands.Cog):
             target_fmt = (
                 f'[Link]({target_message.jump_url}) ({target_channel.mention})' if target_message else 'Not Found'
             )
-            embed.description = f'### {linked_message["name"]}\n' f'- **Target:** {target_fmt}\n'
+            embed.description = f'### {linked_message["name"]}\n- **Target:** {target_fmt}\n'
 
             for i, origin_data in enumerate(linked_message['origins'], 1):
                 origin_channel = self.bot.get_channel(origin_data['channel_id'])
@@ -384,6 +387,6 @@ class MessageLink(commands.Cog):
                 origin_fmt = (
                     f'[Link]({origin_message.jump_url}) ({origin_channel.mention})' if origin_message else 'Not Found'
                 )
-                embed.description += f'**Origin {i}:** {origin_fmt}\n'
+                embed.description += f'- **Origin {i}:** {origin_fmt}\n'
 
         await ctx.send(embed=embed)
