@@ -80,7 +80,7 @@ class MessageLink(commands.Cog):
                     inline=fields[i].get('inline', True),
                 )
 
-        with suppress(TypeError, ValueError):
+        with suppress(ValueError, TypeError):
             embed.timestamp = datetime.fromtimestamp(int(embed_data.get('timestamp')), timezone.utc)
 
         return embed
