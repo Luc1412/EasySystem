@@ -57,7 +57,7 @@ class MessageLink(commands.Cog):
                 icon_url=embed_data.get('author.icon', None),
             )
         embed.title = embed_data.get('title', None)
-        embed.description = embed_data.get('description', None)
+        embed.description = embed_data.get('description', '')
         if embed_data.get('thumbnail'):
             embed.set_thumbnail(url=embed_data['thumbnail'])
         if embed_data.get('image'):
@@ -80,7 +80,7 @@ class MessageLink(commands.Cog):
                     inline=fields[i].get('inline', True),
                 )
 
-        with suppress(TypeError):
+        with suppress(TypeError, ValueError):
             embed.timestamp = datetime.fromtimestamp(int(embed_data.get('timestamp')), timezone.utc)
 
         return embed
