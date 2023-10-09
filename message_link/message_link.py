@@ -34,13 +34,6 @@ class MessageLink(commands.Cog):
                     return linked_message
         return None
 
-    async def _get_by_target(self, target: discord.Message) -> Optional[dict]:
-        linked_messages = await self.settings.guild(target.guild).linked_messages()
-        for linked_message in linked_messages:
-            if target.id == linked_message['target_id'] and target.channel.id == linked_message['target_channel_id']:
-                return linked_message
-        return None
-
     def build_embed(self, origins: List[discord.Message]) -> discord.Embed:
         data = '\n'.join(m.content for m in origins)
 
@@ -311,7 +304,15 @@ class MessageLink(commands.Cog):
             embed.description = 'A message link with that name already exists.'
             return await ctx.send(embed=embed)
 
-        if target_message and self._get_by_target(target_message):
+        target_message_data = [
+            lm
+            for lm in linked_messages
+            if target_message
+            and lm['target_id'] == target_message.id
+            and lm['target_channel_id'] == target_message.channel.id
+        ]
+        target_message_data = target_message_data[0] if target_message_data else None
+        if target_message_data:
             embed = discord.Embed(colour=discord.Colour.dark_red())
             embed.description = 'The target message is already linked.'
             return await ctx.send(embed=embed)
