@@ -74,11 +74,9 @@ class MessageLink(commands.Cog):
                     continue
                 if not fields[i].get('name') or not fields[i].get('value'):
                     continue
-                embed.add_field(
-                    name=fields[i]['name'],
-                    value=fields[i]['value'],
-                    inline=fields[i].get('inline', True),
-                )
+                with suppress(ValueError):
+                    inline = bool(fields[i].get('inline', True))
+                embed.add_field(name=fields[i]['name'], value=fields[i]['value'], inline=inline)
 
         with suppress(ValueError, TypeError):
             embed.timestamp = datetime.fromtimestamp(int(embed_data.get('timestamp')), timezone.utc)
