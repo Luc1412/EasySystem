@@ -47,8 +47,9 @@ class MessageLink(commands.Cog):
         embed_data = self._parse_data(data)
 
         embed = discord.Embed()
-        with suppress(ValueError):
-            embed.colour = discord.Colour.from_str(embed_data.get('colour', ''))
+        if embed_data.get('colour'):
+            with suppress(ValueError):
+                embed.colour = discord.Colour.from_str(embed_data['colour'])
         if embed_data.get('author.text'):
             embed.set_author(
                 name=embed_data['author.name'],
