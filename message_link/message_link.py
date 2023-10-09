@@ -5,9 +5,8 @@ from datetime import datetime, timezone
 from typing import List, Optional
 
 import discord
-from redbot.core import Config, app_commands
+from redbot.core import Config, app_commands, commands
 from redbot.core.bot import Red
-from redbot.core.commands import commands
 
 
 class MessageLink(commands.Cog):
