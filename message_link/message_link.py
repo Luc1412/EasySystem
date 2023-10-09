@@ -41,12 +41,10 @@ class MessageLink(commands.Cog):
                 return linked_message
         return None
 
-    async def _execute_edit(self, target: discord.Message, origins: List[discord.Message]) -> None:
+    def build_embed(self, origins: List[discord.Message]) -> discord.Embed:
         data = '\n'.join(m.content for m in origins)
 
         embed_data = self._parse_data(data)
-        if not embed_data:
-            return
 
         embed = discord.Embed()
         with suppress(ValueError):
@@ -84,9 +82,9 @@ class MessageLink(commands.Cog):
         with suppress(TypeError):
             embed.timestamp = datetime.fromtimestamp(int(embed_data.get('timestamp')), timezone.utc)
 
-        await target.edit(content=None, embed=embed)
+        return embed
 
-    def _parse_data(self, data: str) -> Optional[dict]:
+    def _parse_data(self, data: str) -> dict:
         embed_data = {}
         regex = re.compile(
             r'#(colour|'
@@ -162,7 +160,8 @@ class MessageLink(commands.Cog):
         except discord.NotFound:
             return
 
-        await self._execute_edit(target_message, origins)
+        embed = self.build_embed(origins)
+        await target_message.edit(content=None, embed=embed)
 
     @commands.hybrid_group(name='message-link', description='Manage message links.')
     async def _message_link(self, ctx: commands.Context):
@@ -231,7 +230,10 @@ class MessageLink(commands.Cog):
             name_match = [i for i in linked_messages if i['name'].lower() == name.lower()]
             if not name_match:
                 embed = discord.Embed(colour=discord.Colour.dark_red())
-                embed.description = 'If you don\'t provide a target message or channel, you have to provide a name to append a new origin message to.'
+                embed.description = (
+                    'If you don\'t provide a target message or channel, '
+                    'you have to provide a name to append a new origin message to.'
+                )
                 return await ctx.send(embed=embed)
             index = linked_messages.index(name_match[0])
             linked_messages[index]['origins'].append({'channel_id': origin_message.channel.id, 'id': origin_message.id})
@@ -272,7 +274,8 @@ class MessageLink(commands.Cog):
                     embed.description = 'One of the origin messages is no longer available. Removing the message link.'
                     return await ctx.send(embed=embed)
 
-            await self._execute_edit(target, origins)
+            embed = self.build_embed(origins)
+            await target.edit(content=None, embed=embed)
 
             embed = discord.Embed(colour=discord.Colour.green())
             embed.description = 'Successfully appended new origin message.'
@@ -288,6 +291,12 @@ class MessageLink(commands.Cog):
             embed.description = 'The target message is already linked.'
             return await ctx.send(embed=embed)
 
+        embed = self.build_embed([origin_message])
+        if target_channel:
+            target_message = await target_channel.send(embed=embed)
+        else:
+            await target_message.edit(content=None, embed=embed)
+
         linked_messages.append(
             {
                 'name': name,
@@ -297,8 +306,6 @@ class MessageLink(commands.Cog):
             }
         )
         await self.settings.guild(origin_message.guild).linked_messages.set(linked_messages)
-
-        await self._execute_edit(target_message, [origin_message])
 
         embed = discord.Embed(colour=discord.Colour.green())
         embed.description = 'Successfully linked messages.'
