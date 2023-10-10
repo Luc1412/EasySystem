@@ -158,7 +158,9 @@ class EmbedLink(commands.Cog):
         await target_message.edit(content=None, embed=embed)
 
     @commands.hybrid_group(name='embed-link', description='Manage message links.')
+    @commands.mod_or_permissions(manage_guild=True)
     @app_commands.default_permissions(manage_guild=True)
+    @commands.guild_only()
     async def _embed_link(self, ctx: commands.Context):
         pass
 
