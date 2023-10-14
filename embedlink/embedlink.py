@@ -366,6 +366,8 @@ class EmbedLink(commands.Cog):
             embed.description = 'No messages are linked.'
             return await ctx.send(embed=embed)
 
+        await ctx.defer()
+
         embed = discord.Embed(colour=discord.Color.dark_magenta())
         embed.title = 'Linked Messages'
         embed.description = ''
