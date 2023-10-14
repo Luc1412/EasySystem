@@ -382,7 +382,7 @@ class EmbedLink(commands.Cog):
             target_fmt = (
                 f'[Link]({target_message.jump_url}) ({target_channel.mention})' if target_message else 'Not Found'
             )
-            embed.description = f'### {linked_message["name"]}\n- **Target:** {target_fmt}\n'
+            embed.description += f'### {linked_message["name"]}\n- **Target:** {target_fmt}\n'
 
             for i, origin_data in enumerate(linked_message['origins'], 1):
                 origin_channel = self.bot.get_channel(origin_data['channel_id'])
