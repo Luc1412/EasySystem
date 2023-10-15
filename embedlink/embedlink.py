@@ -26,11 +26,15 @@ class EmbedLink(commands.Cog):
         # }
         self.settings.register_guild(**default_guild_settings)
 
-    async def _get_by_origin(self, origin: discord.Message) -> Optional[dict]:
+    async def _get_by_origin(self, origin: discord.Message | tuple[int, int]) -> Optional[dict]:
+        if isinstance(origin, discord.Message):
+            channel_id, message_id = origin.channel.id, origin.id
+        else:
+            channel_id, message_id = origin
         linked_messages = await self.settings.guild(origin.guild).linked_messages()
         for linked_message in linked_messages:
             for message in linked_message['origins']:
-                if origin.id == message['id'] and origin.channel.id == message['channel_id']:
+                if message_id == message['id'] and channel_id == message['channel_id']:
                     return linked_message
         return None
 
@@ -131,10 +135,9 @@ class EmbedLink(commands.Cog):
     @commands.Cog.listener(name='on_raw_message_edit')
     async def on_message_update(self, payload: discord.RawMessageUpdateEvent):
         channel = self.bot.get_channel(payload.channel_id)
-        message = await channel.fetch_message(payload.message_id)
         if not isinstance(channel, discord.TextChannel):
             return
-        data = await self._get_by_origin(message)
+        data = await self._get_by_origin((payload.channel_id, payload.message_id))
         if not data:
             return
 
