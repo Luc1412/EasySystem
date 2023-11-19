@@ -135,7 +135,7 @@ class EmbedLink(commands.Cog):
     @commands.Cog.listener(name='on_raw_message_edit')
     async def on_message_update(self, payload: discord.RawMessageUpdateEvent):
         channel = self.bot.get_channel(payload.channel_id)
-        if not isinstance(channel, discord.TextChannel):
+        if not isinstance(channel, discord.TextChannel) or not payload.guild_id:
             return
         data = await self._get_by_origin((payload.guild_id, payload.channel_id, payload.message_id))
         if not data:
