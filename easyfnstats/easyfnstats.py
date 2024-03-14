@@ -45,5 +45,9 @@ class EasyFnStats(commands.Cog):
             if member.id not in premium_user_ids:
                 await member.remove_roles(premium_role)
 
+    @_premium_role_loop.before_loop
+    async def before_premium_role_loop(self) -> None:
+        await self.bot.wait_until_red_ready()
+
     async def cog_unload(self) -> None:
         self._premium_role_loop.cancel()
