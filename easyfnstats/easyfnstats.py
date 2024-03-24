@@ -1,11 +1,13 @@
 import re
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import aiohttp
 import discord
 from discord.ext import tasks
 from redbot.core import commands, Config, app_commands
+
+from .enums import PromoDenyReason
 
 if TYPE_CHECKING:
     from redbot.core.bot import Red
@@ -38,34 +40,15 @@ class EasyFnStats(commands.Cog):
         embed.description = f'Successfully set the promo channel to {channel.mention}'
         await ctx.send(embed=embed)
 
-    @commands.Cog.listener('on_thread_create')
-    async def _on_promo_create(self, thread: discord.Thread) -> None:
-        promo_channel_id = await self.settings.guild(thread.guild).promo_channel_id()
-        if not promo_channel_id or thread.parent_id != promo_channel_id:
-            return
+    async def check_promo_message(self, message: discord.Message) -> Optional[PromoDenyReason]:
         # Check for invite link being included
-        invite_urls = INVITE_REGEX.findall(thread.starter_message.content)
+        invite_urls = INVITE_REGEX.findall(message.content)
         if len(invite_urls) != 1:
-            await thread.delete()
-
-            embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = (
-                'Please check our server promo rules again. You are only allowed to post one invite link.'
-            )
-            with suppress(discord.Forbidden):
-                await thread.owner.send(embed=embed)
-            return
+            return PromoDenyReason.WRONG_INVITE_COUNT
         try:
             invite = await self.bot.fetch_invite(invite_urls[0])
         except discord.NotFound:
-            await thread.delete()
-
-            embed = discord.Embed(colour=discord.Colour.dark_red())
-            embed.description = 'Please check our server promo rules again. The invite link you posted is invalid.'
-            with suppress(discord.Forbidden):
-                await thread.owner.send(embed=embed)
-            return
-
+            return PromoDenyReason.INVALID_INVITE
         # Check if bot is on the guild
         api_keys = await self.bot.get_shared_api_tokens('easyfnstats')
         url = 'https://api.easyfnstats.com/guilds'
@@ -74,16 +57,57 @@ class EasyFnStats(commands.Cog):
         async with aiohttp.ClientSession() as session:
             res = await session.get(url, params=params, headers=headers)
             if res.status != 200:
-                await thread.delete()
+                return PromoDenyReason.GUILD_MISSING_BOT
 
-                embed = discord.Embed(colour=discord.Colour.dark_red())
-                embed.description = (
-                    'Please check our server promo rules again. EasyFortniteStats is not on the server. This is '
-                    'required to advertise your server.'
-                )
-                with suppress(discord.Forbidden):
-                    await thread.owner.send(embed=embed)
-                return
+    @commands.Cog.listener('on_thread_create')
+    async def _on_promo_create(self, thread: discord.Thread) -> None:
+        promo_channel_id = await self.settings.guild(thread.guild).promo_channel_id()
+        if not promo_channel_id or thread.parent_id != promo_channel_id:
+            return
+        deny_reason = await self.check_promo_message(thread.starter_message)
+        if not deny_reason:
+            return
+        await thread.delete()
+
+        embed = discord.Embed(colour=discord.Colour.dark_red())
+        if deny_reason == PromoDenyReason.WRONG_INVITE_COUNT:
+            embed.description = 'Please check our server promo rules again. You need to include exactly one invite link in your promo message.'
+        elif deny_reason == PromoDenyReason.INVALID_INVITE:
+            embed.description = 'Please check our server promo rules again. The invite link you posted is invalid.'
+        elif deny_reason == PromoDenyReason.GUILD_MISSING_BOT:
+            embed.description = (
+                'Please check our server promo rules again. EasyFortniteStats is not on the server. This is '
+                'required to advertise your server.'
+            )
+        with suppress(discord.Forbidden):
+            await thread.owner.send(embed=embed)
+
+    @commands.Cog.listener('on_raw_message_edit')
+    async def _on_promo_edit(self, payload: discord.RawMessageUpdateEvent) -> None:
+        channel = self.bot.get_channel(payload.channel_id)
+        # Check if it's a thread and if its starter message (starter message id is the same as the thread id)
+        if not isinstance(channel, discord.Thread) or not payload.message_id != channel.id:
+            return
+        promo_channel_id = await self.settings.guild(channel.guild).promo_channel_id()
+        if not promo_channel_id or channel.parent_id != promo_channel_id:
+            return
+        deny_reason = await self.check_promo_message(await channel.fetch_message(payload.message_id))
+        if not deny_reason:
+            return
+        await channel.delete()
+
+        embed = discord.Embed(colour=discord.Colour.dark_red())
+        if deny_reason == PromoDenyReason.WRONG_INVITE_COUNT:
+            embed.description = 'Please check our server promo rules again. You need to include exactly one invite link in your promo message.'
+        elif deny_reason == PromoDenyReason.INVALID_INVITE:
+            embed.description = 'Please check our server promo rules again. The invite link you posted is invalid.'
+        elif deny_reason == PromoDenyReason.GUILD_MISSING_BOT:
+            embed.description = (
+                'Please check our server promo rules again. EasyFortniteStats is not on the server. This is '
+                'required to advertise your server.'
+            )
+        with suppress(discord.Forbidden):
+            await channel.owner.send(embed=embed)
 
     @commands.Cog.listener('on_message_edit')
     @tasks.loop(minutes=5)
