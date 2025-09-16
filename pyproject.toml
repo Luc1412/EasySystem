@@ -1,3 +1,25 @@
-[tool.black]
-line-length = 120
-skip-string-normalization = true
+[project]
+name = "easysystem"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "red-discordbot==3.5.22",
+]
+
+[tool.ruff.lint]
+select = [        
+    "E", # pycodestyle
+    "F", # Pyflakes
+    "UP", # pyupgrade
+    "B", # flake8-bugbear
+    "SIM", # flake8-simplify
+    "I", # isort
+    "FAST", # fastapi
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.0",
+]

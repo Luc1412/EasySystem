@@ -1,7 +1,0 @@
-{
-  "author": ["Lucas Hardt (Luc1412#1412)"],
-  "description": "Manage the emojis for your bot.",
-  "min_bot_version": "3.5.0",
-  "min_python_version": [3, 11, 0],
-  "tags": ["emoji", "developer"]
-}
