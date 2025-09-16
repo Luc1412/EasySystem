@@ -204,21 +204,16 @@ class Update(commands.Cog):
         image_file = await image.to_file() if image else None
 
         components = message.components
-        if (
-            len(components) in (2, 3)
-            and isinstance(components[0], discord.TextDisplay)
-            and (
-                len(components) == 3
-                and isinstance(components[1], discord.MediaGalleryComponent)
-                and len(components[1].items) == 1
-            )
-            and isinstance(components[-1], discord.TextDisplay)
-        ):
+        if self.check_basic_message(components):
+            assert isinstance(components[0], discord.TextDisplay)
             message_component = components[0]
             title = message_component.content.split("\n")[0].removeprefix("# ").strip()
             text = "\n".join(message_component.content.split("\n")[1:]).strip()
             old_image_file = (
-                components[1].items[0].media if len(components) == 3 else None
+                components[1].items[0].media
+                if len(components) > 2
+                and isinstance(components[1], discord.MediaGalleryComponent)
+                else None
             )
 
             modal = UpdateModal(title, text)
@@ -374,3 +369,33 @@ class Update(commands.Cog):
                 self.components = components
 
         return discord.ui.LayoutView.from_message(ComponentsMessage(components))
+
+    def check_basic_message(self, components: list[discord.Component]) -> bool:
+        """
+        Checks if the components list matches a valid update message structure:
+        - [Message]
+        - [Message, Image]
+        - [Message, Mention]
+        - [Message, Image, Mention]
+        """
+        if not components or not isinstance(components[0], discord.TextDisplay):
+            return False
+
+        if len(components) == 1:
+            return True
+
+        if len(components) == 2:
+            # Second can be image or mention
+            if isinstance(components[1], discord.MediaGalleryComponent):
+                return len(components[1].items) == 1
+            return bool(isinstance(components[1], discord.TextDisplay))
+
+        if len(components) == 3:
+            # Second must be image, third must be mention
+            return bool(
+                isinstance(components[1], discord.MediaGalleryComponent)
+                and len(components[1].items) == 1
+                and isinstance(components[2], discord.TextDisplay)
+            )
+
+        return False
