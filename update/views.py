@@ -61,3 +61,4 @@ class ConfirmButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction) -> None:
         self.__view.interaction = interaction
+        self.__view.stop()
