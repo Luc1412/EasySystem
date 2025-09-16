@@ -54,7 +54,7 @@ class ConfirmView(discord.ui.LayoutView):
         )
 
 
-class ConfirmButton(discord.ui.Button):
+class ConfirmButton(discord.ui.Button[ConfirmView]):
     def __init__(self, view: ConfirmView) -> None:
         super().__init__(style=discord.ButtonStyle.green, label="Confirm")
         self.__view = view
