@@ -3,7 +3,9 @@ import discord.ui
 
 class UpdateModal(discord.ui.Modal, title="Compose Update"):
     title_input = discord.ui.Label(text="Title", component=discord.ui.TextInput())
-    text_input = discord.ui.Label(text="Text", component=discord.ui.TextInput())
+    text_input = discord.ui.Label(
+        text="Text", component=discord.ui.TextInput(style=discord.TextStyle.long)
+    )
     interaction: discord.Interaction
 
     def __init__(self, title: str | None = None, text: str | None = None):
