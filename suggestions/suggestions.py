@@ -104,7 +104,9 @@ class Suggestions(commands.Cog):
         await ctx.send(
             view=discord.ui.LayoutView().add_item(
                 discord.ui.Container(
-                    discord.ui.TextDisplay(content="# Suggestion finalized"),
+                    discord.ui.TextDisplay(
+                        f"## This suggestion has been {'approved' if approved else 'denied'}"
+                    ),
                     accent_colour=discord.Colour.green(),
                 )
             )
