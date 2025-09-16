@@ -124,7 +124,7 @@ class Update(commands.Cog):
             view=confirm_view, allowed_mentions=discord.AllowedMentions.none()
         )
 
-        if await view.wait():
+        if await confirm_view.wait():
             await ctx.interaction.edit_original_response(
                 view=ResponseView(
                     "Update canceled",
