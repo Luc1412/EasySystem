@@ -145,7 +145,7 @@ class Update(commands.Cog):
             with suppress(discord.Forbidden):
                 await message.publish()
 
-        await ctx.interaction.edit_original_response(
+        await ctx.interaction.response.edit_message(
             view=ResponseView(
                 "Update sent",
                 "The update message was successfully sent.",
