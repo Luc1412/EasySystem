@@ -29,13 +29,19 @@ class BanTrap(commands.Cog):
         self.settings.register_guild(**defaults)
         self._members_in_progress: set[tuple[int, int]] = set()
 
-    @commands.hybrid_command(  # pyright: ignore[reportArgumentType]
-        name="bantrap-setup",
-        description="Create a channel that soft-bans anyone who sends a message in it.",
+    @commands.hybrid_group(  # pyright: ignore[reportArgumentType]
+        name="bantrap", description="Manage the ban-trap feature."
     )
     @commands.guild_only()
     @commands.admin_or_permissions(manage_guild=True)
     @app_commands.default_permissions(manage_guild=True)
+    async def bantrap(self, ctx: commands.Context) -> None:
+        """Manage the ban-trap feature."""
+
+    @bantrap.command(  # pyright: ignore[reportArgumentType]
+        name="setup",
+        description="Create a channel that soft-bans anyone who sends a message in it.",
+    )
     @app_commands.describe(name="The name of the warning channel.")
     async def bantrap_setup(
         self, ctx: commands.Context, name: str = "do-not-send-messages"
@@ -122,13 +128,10 @@ class BanTrap(commands.Cog):
             ephemeral=True,
         )
 
-    @commands.hybrid_command(  # pyright: ignore[reportArgumentType]
-        name="bantrap-log-channel",
+    @bantrap.command(  # pyright: ignore[reportArgumentType]
+        name="log-channel",
         description="Set or clear the channel used for ban-trap moderation logs.",
     )
-    @commands.guild_only()
-    @commands.admin_or_permissions(manage_guild=True)
-    @app_commands.default_permissions(manage_guild=True)
     @app_commands.describe(channel="The log channel. Leave empty to disable logging.")
     async def bantrap_log_channel(
         self, ctx: commands.Context, channel: discord.TextChannel | None = None
