@@ -1,0 +1,12 @@
+{
+  "author": ["Lucas Hardt (Luc1412#1412)"],
+  "description": "Create a warning channel that soft-bans members who send messages in it.",
+  "install_msg": "Use /bantrap-setup to create and configure the warning channel.",
+  "min_bot_version": "3.5.0",
+  "min_python_version": [3, 11, 0],
+  "permissions": ["ban_members", "manage_channels", "moderate_members"],
+  "required_cogs": {},
+  "requirements": [],
+  "short": "Soft-ban members who message in a warning channel.",
+  "tags": ["moderation", "ban", "softban", "timeout"]
+}
