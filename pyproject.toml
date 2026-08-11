@@ -18,6 +18,9 @@ select = [
     "I", # isort
     "FAST", # fastapi
 ]
+ignore = [
+    "E501", # line too long
+]
 
 [dependency-groups]
 dev = [
