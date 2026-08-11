@@ -283,9 +283,10 @@ class BanTrap(commands.Cog):
     @staticmethod
     def _warning_view() -> MessageView:
         return MessageView(
-            "Warning: do not send messages in this channel",
+            ":warning: DON'T SEND MESSAGES HERE :warning:",
             (
-                "Sending any message here will automatically result in a **3-day soft-ban**."
+                "This channel is a trap for compromised and malicious accounts. "
+                "**Sending a message** here will result in an automatic **3-day soft-ban**."
             ),
             colour=discord.Colour.red(),
         )
