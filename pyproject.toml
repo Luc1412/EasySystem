@@ -3,7 +3,7 @@ name = "easysystem"
 version = "2.0.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = "==3.11.*"
 dependencies = [
     "red-discordbot==3.5.22",
 ]
@@ -21,5 +21,5 @@ select = [
 
 [dependency-groups]
 dev = [
-    "ruff>=0.13.0",
+    "ruff>=0.16.0",
 ]
