@@ -22,7 +22,17 @@ ignore = [
     "E501", # line too long
 ]
 
+[tool.pyright]
+typeCheckingMode = "strict"
+pythonVersion = "3.11"
+# Red's public API still exposes unannotated parameters and return values.
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportMissingTypeArgument = false
+
 [dependency-groups]
 dev = [
+    "pyright>=1.1.411",
     "ruff>=0.16.0",
 ]

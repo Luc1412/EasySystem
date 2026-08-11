@@ -1,3 +1,5 @@
+from typing import Self
+
 import discord.ui
 
 
@@ -40,7 +42,7 @@ class ResponseView(discord.ui.LayoutView):
 class ConfirmView(discord.ui.LayoutView):
     interaction: discord.Interaction
 
-    def __init__(self, items: list[discord.ui.Item]) -> None:
+    def __init__(self, items: list[discord.ui.Item[Self]]) -> None:
         super().__init__()
         for item in items:
             self.add_item(item)

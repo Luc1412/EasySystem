@@ -31,7 +31,7 @@ class Suggestions(commands.Cog):
     )
     @commands.guild_only()
     @app_commands.default_permissions(manage_guild=True)
-    async def _suggest_settings(self, _) -> None:
+    async def _suggest_settings(self, _: commands.Context) -> None:
         pass
 
     @_suggest_settings.command(
@@ -62,7 +62,7 @@ class Suggestions(commands.Cog):
     @app_commands.rename(upvote_emoji="upvote-emoji", downvote_emoji="downvote-emoji")
     async def _suggest_settings_emojis(
         self, ctx: commands.Context, upvote_emoji: str, downvote_emoji: str
-    ):
+    ) -> None:
         assert ctx.guild is not None
         await self.settings.guild(ctx.guild).upvote_emoji.set(upvote_emoji)
         await self.settings.guild(ctx.guild).downvote_emoji.set(downvote_emoji)
@@ -77,11 +77,11 @@ class Suggestions(commands.Cog):
         )
 
     @_suggest_settings.command(name="approve", description="Approve a suggestion.")
-    async def _suggest_settings_approve(self, ctx: commands.Context):
+    async def _suggest_settings_approve(self, ctx: commands.Context) -> None:
         await self.finalize_suggestion(ctx, True)
 
     @_suggest_settings.command(name="deny", description="Deny a suggestion.")
-    async def _suggest_settings_deny(self, ctx: commands.Context):
+    async def _suggest_settings_deny(self, ctx: commands.Context) -> None:
         await self.finalize_suggestion(ctx, False)
 
     async def finalize_suggestion(self, ctx: commands.Context, approved: bool) -> None:

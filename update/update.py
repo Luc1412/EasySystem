@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import json
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord import app_commands
-from discord.components import _component_factory
+from discord.components import _component_factory  # pyright: ignore[reportPrivateUsage]
 from redbot.core import Config, checks, commands
 
 from .types import UpdateGuildSettings
@@ -26,7 +26,7 @@ class Update(commands.Cog):
         }
         self.settings.register_channel(**default_channel_settings)
 
-    @commands.hybrid_command(
+    @commands.hybrid_command(  # pyright: ignore[reportArgumentType]
         name="update",
         description="Sends a update message to the selected channel with the selected parameters",
     )
@@ -152,7 +152,9 @@ class Update(commands.Cog):
             ),
         )
 
-    @commands.hybrid_command(name="update-edit", description="Edits a update message.")
+    @commands.hybrid_command(  # pyright: ignore[reportArgumentType]
+        name="update-edit", description="Edits a update message."
+    )
     @commands.guild_only()
     @checks.admin_or_permissions(manage_guild=True)
     @app_commands.default_permissions(manage_guild=True)
@@ -260,11 +262,11 @@ class Update(commands.Cog):
             ),
         )
 
-    @commands.hybrid_group(name="update-settings")
+    @commands.hybrid_group(name="update-settings")  # pyright: ignore[reportArgumentType]
     @commands.guild_only()
     @checks.admin_or_permissions(manage_guild=True)
     @app_commands.default_permissions(manage_guild=True)
-    async def _update_settings(self, _) -> None:
+    async def _update_settings(self, _: commands.Context) -> None:
         """Update configuration options."""
         pass
 
@@ -330,7 +332,7 @@ class Update(commands.Cog):
     @_update_settings.command(
         name="list", description="List all settings for all update channels."
     )
-    async def _update_settings_list(self, ctx: commands.Context):
+    async def _update_settings_list(self, ctx: commands.Context) -> None:
         assert ctx.guild is not None
         view = discord.ui.LayoutView().add_item(
             discord.ui.TextDisplay("# Update Channels")
@@ -357,15 +359,32 @@ class Update(commands.Cog):
         await ctx.send(view=view)
 
     def build_view_from_payload(self, payload: str) -> discord.ui.LayoutView:
-        data: dict[Any, Any] = json.loads(payload)
+        raw_data = cast(object, json.loads(payload))
+        if not isinstance(raw_data, dict):
+            raise ValueError("Payload must be a JSON object")
 
-        components = []
-        for component_data in data["data"]["components"]:
-            if component := _component_factory(component_data):
+        data = raw_data.get("data")
+        if not isinstance(data, dict):
+            raise ValueError("Payload must contain a data object")
+
+        raw_components = data.get("components")
+        if not isinstance(raw_components, list):
+            raise ValueError("Payload data must contain a components list")
+
+        components: list[discord.Component] = []
+        for raw_component in raw_components:
+            if not isinstance(raw_component, dict) or not isinstance(
+                raw_component.get("type"), int
+            ):
+                raise ValueError(
+                    "Each component must be an object with an integer type"
+                )
+            component_data = cast(dict[str, object], raw_component)
+            if component := _component_factory(component_data):  # pyright: ignore[reportArgumentType]
                 components.append(component)
 
         class ComponentsMessage(discord.Message):
-            def __init__(self, components: list[discord.Component]):
+            def __init__(self, components: list[discord.Component]) -> None:
                 self.components = components
 
         return discord.ui.LayoutView.from_message(ComponentsMessage(components))

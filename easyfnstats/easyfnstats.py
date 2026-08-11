@@ -1,17 +1,37 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import aiohttp
 from discord.ext import tasks
 from redbot.core import commands
 
+from .types import PremiumUser
+
 if TYPE_CHECKING:
     from redbot.core.bot import Red
 
 
+def parse_premium_users(value: object) -> list[PremiumUser]:
+    if not isinstance(value, list):
+        raise ValueError("Premium API response must be a list")
+
+    users: list[PremiumUser] = []
+    for entry in value:
+        if not isinstance(entry, dict):
+            raise ValueError("Each premium user must be an object")
+        user_id = entry.get("id")
+        source = entry.get("source")
+        if not isinstance(user_id, int) or isinstance(user_id, bool):
+            raise ValueError("Premium user id must be an integer")
+        if not isinstance(source, str):
+            raise ValueError("Premium user source must be a string")
+        users.append({"id": user_id, "source": source})
+    return users
+
+
 class EasyFnStats(commands.Cog):
-    def __init__(self, bot: Red):
+    def __init__(self, bot: Red) -> None:
         self.bot: Red = bot
 
     async def cog_load(self) -> None:
@@ -28,7 +48,7 @@ class EasyFnStats(commands.Cog):
             aiohttp.ClientSession() as session,
             session.get(url, params=params, headers=headers) as resp,
         ):
-            data = await resp.json()
+            data = parse_premium_users(cast(object, await resp.json()))
         premium_user_ids = [entry["id"] for entry in data]
 
         guild = self.bot.get_guild(341939185051107330)
