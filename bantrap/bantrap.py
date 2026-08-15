@@ -172,6 +172,8 @@ class BanTrap(commands.Cog):
         if key in self._members_in_progress:
             return
 
+        await self._send_detected_message_log(message)
+
         # Never act on the server owner or a member the bot cannot moderate.
         bot_member = guild.me
         if member == guild.owner or member.top_role >= bot_member.top_role:
@@ -264,12 +266,8 @@ class BanTrap(commands.Cog):
         text: str,
         colour: discord.Colour,
     ) -> None:
-        channel_id: int | None = await self.settings.guild(guild).log_channel_id()
-        if channel_id is None:
-            return
-
-        channel = guild.get_channel(channel_id)
-        if not isinstance(channel, discord.TextChannel):
+        channel = await self._get_log_channel(guild)
+        if channel is None:
             return
 
         try:
@@ -279,6 +277,38 @@ class BanTrap(commands.Cog):
             )
         except discord.HTTPException:
             log.exception("Could not send a ban-trap event log in guild %s", guild.id)
+
+    async def _send_detected_message_log(self, message: discord.Message) -> None:
+        assert message.guild is not None
+        channel = await self._get_log_channel(message.guild)
+        if channel is None:
+            return
+
+        try:
+            await channel.send(
+                view=MessageView(
+                    "Ban-trap message detected",
+                    f"{message.author.mention} (`{message.author.id}`) sent the message below "
+                    f"in <#{message.channel.id}>.",
+                    colour=discord.Colour.orange(),
+                ),
+                allowed_mentions=discord.AllowedMentions.none(),
+            )
+            await message.forward(channel)
+        except discord.HTTPException:
+            log.exception(
+                "Could not forward a ban-trap message in guild %s", message.guild.id
+            )
+
+    async def _get_log_channel(
+        self, guild: discord.Guild
+    ) -> discord.TextChannel | None:
+        channel_id: int | None = await self.settings.guild(guild).log_channel_id()
+        if channel_id is None:
+            return None
+
+        channel = guild.get_channel(channel_id)
+        return channel if isinstance(channel, discord.TextChannel) else None
 
     @staticmethod
     def _warning_view() -> MessageView:
