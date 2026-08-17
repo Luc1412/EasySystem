@@ -251,14 +251,6 @@ class BanTrap(commands.Cog):
             )
             return
 
-        await self._send_log(
-            member.guild,
-            "Soft-ban completed",
-            f"{member.mention} (`{member.id}`) wrote in <#{message.channel.id}> and received "
-            "a 3-day timeout plus a soft-ban with seven days of messages purged.",
-            discord.Colour.green(),
-        )
-
     async def _send_log(
         self,
         guild: discord.Guild,
@@ -287,9 +279,10 @@ class BanTrap(commands.Cog):
         try:
             await channel.send(
                 view=MessageView(
-                    "Ban-trap message detected",
-                    f"{message.author.mention} (`{message.author.id}`) sent the message below "
-                    f"in <#{message.channel.id}>.",
+                    "Soft-ban triggered",
+                    f"{message.author.mention} (`{message.author.id}`) wrote in "
+                    f"<#{message.channel.id}> and triggered a 3-day timeout plus a soft-ban "
+                    "with seven days of messages purged. Their message is forwarded below.",
                     colour=discord.Colour.orange(),
                 ),
                 allowed_mentions=discord.AllowedMentions.none(),
